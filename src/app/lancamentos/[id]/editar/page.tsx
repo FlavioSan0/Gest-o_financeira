@@ -7,18 +7,38 @@ type EditTransactionPageProps = {
   params: Promise<{
     id: string;
   }>;
+  searchParams?: Promise<{
+    type?: string;
+  }>;
 };
+
+type TransactionType = "INCOME" | "EXPENSE";
+
+function resolveEditType(
+  queryType: string | undefined,
+  transactionType: TransactionType,
+): TransactionType {
+  if (queryType === "INCOME" || queryType === "EXPENSE") {
+    return queryType;
+  }
+
+  return transactionType;
+}
 
 export default async function EditTransactionPage({
   params,
+  searchParams,
 }: EditTransactionPageProps) {
   const { id } = await params;
+  const query = await searchParams;
 
   const data = await getTransactionForEdit(id);
 
   if (!data) {
     notFound();
   }
+
+  const defaultType = resolveEditType(query?.type, data.transaction.type);
 
   return (
     <AppShell>
@@ -28,6 +48,7 @@ export default async function EditTransactionPage({
           accounts={data.options.accounts}
           categories={data.options.categories}
           creditCards={data.options.creditCards}
+          defaultType={defaultType}
         />
       </div>
     </AppShell>

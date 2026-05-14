@@ -6,6 +6,8 @@ import { getCurrentSession } from "@/lib/session";
 export async function Topbar() {
   const session = await getCurrentSession();
 
+  const firstName = session?.name?.split(" ")[0] ?? "Usuário";
+
   const initials = session?.name
     ? session.name
         .split(" ")
@@ -17,8 +19,9 @@ export async function Topbar() {
 
   return (
     <header className="topbar">
-      <div>
-        <p className="text-sm font-medium app-faint-text">Visão geral</p>
+      <div className="min-w-0">
+        <p className="text-sm font-medium app-faint-text">Olá, {firstName}</p>
+
         <h1 className="topbar-title text-white">Dashboard financeiro</h1>
       </div>
 
@@ -31,7 +34,10 @@ export async function Topbar() {
           <Bell className="h-4 w-4" />
         </button>
 
-        <Link href="/lancamentos/novo" className="app-button-primary">
+        <Link
+          href="/lancamentos/novo"
+          className="app-button-primary topbar-new-button"
+        >
           <Plus className="h-4 w-4" />
           Novo lançamento
         </Link>
@@ -43,6 +49,7 @@ export async function Topbar() {
             <p className="text-xs font-bold text-white">
               {session?.name ?? "Usuário"}
             </p>
+
             <p className="text-[11px] app-faint-text">
               {session?.email ?? "Sessão ativa"}
             </p>

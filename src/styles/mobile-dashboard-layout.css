@@ -1,0 +1,773 @@
+/* =========================================================
+   MOBILE DASHBOARD STRUCTURE
+   Dashboard mobile separado da versão desktop
+========================================================= */
+
+@media (max-width: 900px) {
+  .mobile-dashboard {
+    display: grid;
+    gap: 18px;
+    padding-bottom: 10px;
+  }
+
+  .mobile-eyebrow {
+    font-size: 0.74rem;
+    font-weight: 850;
+    color: rgba(255, 255, 255, 0.5);
+  }
+
+  .mobile-balance-card {
+    position: relative;
+    display: grid;
+    gap: 22px;
+    overflow: hidden;
+    border-radius: 32px;
+    background:
+      radial-gradient(circle at top right, rgba(255, 255, 255, 0.16), transparent 9rem),
+      linear-gradient(180deg, rgba(255, 255, 255, 1), rgba(235, 238, 244, 0.96));
+    color: #020617;
+    padding: 22px;
+    box-shadow:
+      0 20px 55px rgba(255, 255, 255, 0.08),
+      0 24px 60px rgba(0, 0, 0, 0.3);
+  }
+
+  .mobile-balance-card__top {
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+    gap: 16px;
+  }
+
+  .mobile-balance-card h2 {
+    margin-top: 0.2rem;
+    font-size: 1.05rem;
+    font-weight: 900;
+    letter-spacing: -0.04em;
+  }
+
+  .mobile-balance-card .mobile-eyebrow {
+    color: rgba(2, 6, 23, 0.52);
+  }
+
+  .mobile-balance-card__icon {
+    display: flex;
+    height: 46px;
+    width: 46px;
+    flex-shrink: 0;
+    align-items: center;
+    justify-content: center;
+    border-radius: 18px;
+    background: #020617;
+    color: #ffffff;
+  }
+
+  .mobile-balance-card > strong {
+    display: block;
+    font-size: clamp(2.05rem, 10vw, 3rem);
+    font-weight: 950;
+    line-height: 0.95;
+    letter-spacing: -0.075em;
+  }
+
+  .mobile-balance-card__footer {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 10px;
+  }
+
+  .mobile-balance-card__footer div {
+    border-radius: 20px;
+    background: rgba(2, 6, 23, 0.06);
+    padding: 12px;
+  }
+
+  .mobile-balance-card__footer span {
+    display: block;
+    font-size: 0.72rem;
+    font-weight: 800;
+    color: rgba(2, 6, 23, 0.48);
+  }
+
+  .mobile-balance-card__footer b {
+    margin-top: 0.28rem;
+    display: block;
+    font-size: 0.95rem;
+    font-weight: 950;
+  }
+
+  .mobile-quick-actions {
+    display: grid;
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+    gap: 10px;
+  }
+
+  .mobile-quick-action {
+    display: grid;
+    justify-items: center;
+    gap: 8px;
+    border-radius: 24px;
+    border: 1px solid rgba(255, 255, 255, 0.08);
+    background:
+      linear-gradient(180deg, rgba(255, 255, 255, 0.06), rgba(255, 255, 255, 0.025)),
+      rgba(8, 13, 27, 0.8);
+    padding: 12px 6px;
+    text-align: center;
+  }
+
+  .mobile-quick-action div {
+    display: flex;
+    height: 42px;
+    width: 42px;
+    align-items: center;
+    justify-content: center;
+    border-radius: 16px;
+    background: #ffffff;
+    color: #020617;
+  }
+
+  .mobile-quick-action span {
+    font-size: 0.7rem;
+    font-weight: 850;
+    color: rgba(255, 255, 255, 0.72);
+  }
+
+  .mobile-alert-card {
+    display: grid;
+    grid-template-columns: auto minmax(0, 1fr) auto;
+    align-items: center;
+    gap: 12px;
+    border-radius: 26px;
+    border: 1px solid rgba(245, 158, 11, 0.16);
+    background:
+      linear-gradient(180deg, rgba(245, 158, 11, 0.12), rgba(245, 158, 11, 0.045)),
+      rgba(8, 13, 27, 0.84);
+    padding: 15px;
+  }
+
+  .mobile-alert-card__icon {
+    display: flex;
+    height: 44px;
+    width: 44px;
+    align-items: center;
+    justify-content: center;
+    border-radius: 17px;
+    background: rgba(245, 158, 11, 0.16);
+    color: #f59e0b;
+  }
+
+  .mobile-alert-card strong {
+    display: block;
+    font-size: 0.92rem;
+    font-weight: 950;
+    letter-spacing: -0.03em;
+    color: #ffffff;
+  }
+
+  .mobile-alert-card p {
+    margin-top: 0.16rem;
+    font-size: 0.74rem;
+    line-height: 1.35;
+    color: rgba(255, 255, 255, 0.48);
+  }
+
+  .mobile-section {
+    display: grid;
+    gap: 12px;
+  }
+
+  .mobile-section__header {
+    display: flex;
+    align-items: flex-end;
+    justify-content: space-between;
+    gap: 14px;
+    padding-inline: 2px;
+  }
+
+  .mobile-section__header h3 {
+    margin-top: 0.1rem;
+    font-size: 1.2rem;
+    font-weight: 950;
+    letter-spacing: -0.055em;
+    color: #ffffff;
+  }
+
+  .mobile-see-all {
+    flex-shrink: 0;
+    font-size: 0.76rem;
+    font-weight: 850;
+    color: rgba(255, 255, 255, 0.5);
+  }
+
+  .mobile-responsible-list {
+    display: grid;
+    gap: 12px;
+  }
+
+  .mobile-responsible-card {
+    display: grid;
+    gap: 14px;
+    overflow: hidden;
+    border-radius: 28px;
+    border: 1px solid rgba(255, 255, 255, 0.08);
+    background:
+      linear-gradient(180deg, rgba(255, 255, 255, 0.06), rgba(255, 255, 255, 0.025)),
+      rgba(8, 13, 27, 0.84);
+    padding: 16px;
+  }
+
+  .mobile-responsible-card.main {
+    background:
+      linear-gradient(180deg, rgba(255, 255, 255, 0.075), rgba(255, 255, 255, 0.028)),
+      rgba(10, 15, 31, 0.9);
+  }
+
+  .mobile-responsible-card__top {
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+    gap: 12px;
+  }
+
+  .mobile-responsible-card__top span {
+    font-size: 0.72rem;
+    font-weight: 800;
+    color: rgba(255, 255, 255, 0.46);
+  }
+
+  .mobile-responsible-card__top strong {
+    margin-top: 0.14rem;
+    display: block;
+    font-size: 1rem;
+    font-weight: 950;
+    letter-spacing: -0.04em;
+    color: #ffffff;
+  }
+
+  .mobile-responsible-card__avatar {
+    display: flex;
+    height: 42px;
+    width: 42px;
+    align-items: center;
+    justify-content: center;
+    border-radius: 16px;
+    background: #ffffff;
+    color: #020617;
+  }
+
+  .mobile-responsible-card > b {
+    font-size: 1.7rem;
+    font-weight: 950;
+    line-height: 1;
+    letter-spacing: -0.065em;
+    color: #ffffff;
+  }
+
+  .mobile-responsible-card__rows {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+  }
+
+  .mobile-responsible-card__rows span {
+    border-radius: 999px;
+    background: rgba(255, 255, 255, 0.055);
+    padding: 0.42rem 0.58rem;
+    font-size: 0.72rem;
+    font-weight: 900;
+  }
+
+  .mobile-transaction-list {
+    display: grid;
+    gap: 10px;
+  }
+
+  .mobile-transaction-card {
+    display: grid;
+    grid-template-columns: auto minmax(0, 1fr) auto;
+    align-items: center;
+    gap: 12px;
+    border-radius: 24px;
+    border: 1px solid rgba(255, 255, 255, 0.075);
+    background:
+      linear-gradient(180deg, rgba(255, 255, 255, 0.05), rgba(255, 255, 255, 0.02)),
+      rgba(8, 13, 27, 0.76);
+    padding: 13px;
+  }
+
+  .mobile-transaction-card__icon {
+    display: flex;
+    height: 42px;
+    width: 42px;
+    align-items: center;
+    justify-content: center;
+    border-radius: 16px;
+    background: rgba(255, 255, 255, 0.08);
+    color: #ffffff;
+  }
+
+  .mobile-transaction-card__content {
+    min-width: 0;
+  }
+
+  .mobile-transaction-card__content strong {
+    display: block;
+    overflow: hidden;
+    font-size: 0.88rem;
+    font-weight: 920;
+    letter-spacing: -0.025em;
+    color: #ffffff;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+
+  .mobile-transaction-card__content span {
+    margin-top: 0.18rem;
+    display: block;
+    overflow: hidden;
+    font-size: 0.72rem;
+    font-weight: 700;
+    color: rgba(255, 255, 255, 0.42);
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+
+  .mobile-transaction-card__value {
+    text-align: right;
+  }
+
+  .mobile-transaction-card__value strong {
+    display: block;
+    font-size: 0.84rem;
+    font-weight: 950;
+    white-space: nowrap;
+  }
+
+  .mobile-transaction-card__value span {
+    margin-top: 0.18rem;
+    display: block;
+    font-size: 0.66rem;
+    color: rgba(255, 255, 255, 0.38);
+    white-space: nowrap;
+  }
+
+  .mobile-empty-state {
+    display: grid;
+    gap: 6px;
+    border-radius: 26px;
+    border: 1px dashed rgba(255, 255, 255, 0.14);
+    background: rgba(8, 13, 27, 0.64);
+    padding: 18px;
+    text-align: center;
+  }
+
+  .mobile-empty-state strong {
+    color: #ffffff;
+  }
+
+  .mobile-empty-state p {
+    font-size: 0.78rem;
+    color: rgba(255, 255, 255, 0.48);
+  }
+
+  .mobile-empty-state a {
+    margin-top: 6px;
+    display: inline-flex;
+    justify-self: center;
+    border-radius: 999px;
+    background: #ffffff;
+    padding: 0.65rem 0.9rem;
+    color: #020617;
+    font-size: 0.78rem;
+    font-weight: 900;
+  }
+}
+
+@media (max-width: 380px) {
+  .mobile-quick-actions {
+    gap: 8px;
+  }
+
+  .mobile-quick-action {
+    border-radius: 20px;
+    padding: 10px 4px;
+  }
+
+  .mobile-quick-action div {
+    height: 38px;
+    width: 38px;
+    border-radius: 14px;
+  }
+
+  .mobile-quick-action span {
+    font-size: 0.66rem;
+  }
+
+  .mobile-transaction-card {
+    grid-template-columns: auto minmax(0, 1fr);
+  }
+
+  .mobile-transaction-card__value {
+    grid-column: 2;
+    text-align: left;
+  }
+}
+
+@media (max-width: 900px) {
+  .mobile-transaction-form {
+    display: grid;
+    gap: 14px;
+    padding-bottom: 12px;
+  }
+
+  .mobile-form-header {
+    display: grid;
+    gap: 8px;
+    border-radius: 30px;
+    border: 1px solid rgba(255, 255, 255, 0.08);
+    background:
+      linear-gradient(180deg, rgba(255, 255, 255, 0.07), rgba(255, 255, 255, 0.026)),
+      rgba(8, 13, 27, 0.82);
+    padding: 18px;
+  }
+
+  .mobile-form-back {
+    display: inline-flex;
+    width: fit-content;
+    align-items: center;
+    gap: 0.45rem;
+    font-size: 0.76rem;
+    font-weight: 850;
+    color: rgba(255, 255, 255, 0.52);
+  }
+
+  .mobile-form-header h2 {
+    font-size: 1.9rem;
+    font-weight: 950;
+    line-height: 1;
+    letter-spacing: -0.065em;
+    color: #ffffff;
+  }
+
+  .mobile-form-header p {
+    font-size: 0.84rem;
+    line-height: 1.45;
+    color: rgba(255, 255, 255, 0.52);
+  }
+
+  .mobile-form-card {
+    display: grid;
+    gap: 14px;
+    border-radius: 26px;
+    border: 1px solid rgba(255, 255, 255, 0.08);
+    background:
+      linear-gradient(180deg, rgba(255, 255, 255, 0.06), rgba(255, 255, 255, 0.024)),
+      rgba(8, 13, 27, 0.78);
+    padding: 15px;
+  }
+
+  .mobile-form-group {
+    display: grid;
+    gap: 7px;
+  }
+
+  .mobile-form-label {
+    font-size: 0.76rem;
+    font-weight: 900;
+    color: rgba(255, 255, 255, 0.72);
+  }
+
+  .mobile-form-helper {
+    font-size: 0.74rem;
+    font-weight: 800;
+    line-height: 1.35;
+  }
+
+  .mobile-form-value-input {
+    font-size: 1.35rem;
+    font-weight: 950;
+    letter-spacing: -0.045em;
+  }
+
+  .mobile-form-submit {
+    position: sticky;
+    bottom: 86px;
+    z-index: 30;
+    display: inline-flex;
+    min-height: 52px;
+    align-items: center;
+    justify-content: center;
+    gap: 0.5rem;
+    border-radius: 20px;
+    background: #ffffff;
+    color: #020617;
+    font-size: 0.9rem;
+    font-weight: 950;
+    box-shadow:
+      0 18px 44px rgba(0, 0, 0, 0.35),
+      0 0 28px rgba(255, 255, 255, 0.12);
+  }
+}
+
+@media (max-width: 900px) {
+  .mobile-type-switch {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 8px;
+    border-radius: 22px;
+    background: rgba(2, 6, 23, 0.58);
+    padding: 6px;
+  }
+
+  .mobile-type-switch__option {
+    display: inline-flex;
+    min-height: 48px;
+    align-items: center;
+    justify-content: center;
+    gap: 0.45rem;
+    border-radius: 17px;
+    border: 1px solid transparent;
+    color: rgba(255, 255, 255, 0.46);
+    font-size: 0.82rem;
+    font-weight: 950;
+    transition:
+      background 0.18s ease,
+      color 0.18s ease,
+      border-color 0.18s ease,
+      transform 0.18s ease;
+  }
+
+  .mobile-type-switch__option:active {
+    transform: scale(0.97);
+  }
+
+  .mobile-type-switch__option--expense.mobile-type-switch__option--active {
+    border-color: rgba(239, 68, 68, 0.28);
+    background:
+      linear-gradient(180deg, rgba(239, 68, 68, 0.18), rgba(239, 68, 68, 0.08)),
+      rgba(239, 68, 68, 0.08);
+    color: #ff4d4d;
+  }
+
+  .mobile-type-switch__option--income.mobile-type-switch__option--active {
+    border-color: rgba(34, 197, 94, 0.28);
+    background:
+      linear-gradient(180deg, rgba(34, 197, 94, 0.18), rgba(34, 197, 94, 0.08)),
+      rgba(34, 197, 94, 0.08);
+    color: #22c55e;
+  }
+}
+
+/* =========================================================
+   MOBILE FORM / FILTER APP REFINEMENT
+   Refino visual para formulários e filtros no mobile
+========================================================= */
+
+@media (max-width: 900px) {
+  /* =========================
+     FORMULÁRIO DE LANÇAMENTO
+  ========================= */
+
+  .mobile-transaction-form {
+    gap: 16px;
+  }
+
+  .mobile-form-header {
+    position: relative;
+    overflow: hidden;
+  }
+
+  .mobile-form-header::after {
+    content: "";
+    position: absolute;
+    right: -46px;
+    top: -52px;
+    height: 130px;
+    width: 130px;
+    border-radius: 999px;
+    background: rgba(255, 255, 255, 0.035);
+    pointer-events: none;
+  }
+
+  .mobile-form-header > * {
+    position: relative;
+    z-index: 1;
+  }
+
+  .mobile-form-card {
+    gap: 16px;
+  }
+
+  .mobile-form-card + .mobile-form-card {
+    margin-top: -2px;
+  }
+
+  .mobile-form-label {
+    display: inline-flex;
+    width: fit-content;
+    align-items: center;
+    gap: 0.35rem;
+    border-radius: 999px;
+    color: rgba(255, 255, 255, 0.68);
+  }
+
+  .mobile-form-helper {
+    margin-top: -2px;
+  }
+
+  .mobile-form-group {
+    gap: 8px;
+  }
+
+  .mobile-form-submit {
+    width: 100%;
+  }
+
+  /* =========================
+     CONTROLE ENTRADA / SAÍDA
+  ========================= */
+
+  .mobile-type-switch {
+    background:
+      linear-gradient(180deg, rgba(255, 255, 255, 0.045), rgba(255, 255, 255, 0.015)),
+      rgba(1, 5, 15, 0.8);
+    border: 1px solid rgba(255, 255, 255, 0.075);
+    box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.035);
+  }
+
+  .mobile-type-switch__option {
+    min-height: 50px;
+  }
+
+  .mobile-type-switch__option--active {
+    box-shadow:
+      0 10px 26px rgba(0, 0, 0, 0.22),
+      inset 0 1px 0 rgba(255, 255, 255, 0.045);
+  }
+
+  /* =========================
+     INPUTS / SELECTS NO MOBILE
+  ========================= */
+
+  .mobile-form-card .finance-input {
+    border-radius: 20px;
+    min-height: 54px;
+  }
+
+  .mobile-form-card select.finance-input {
+    font-weight: 900;
+  }
+
+  .mobile-form-card textarea.finance-input {
+    min-height: 108px;
+  }
+
+  .mobile-form-value-input {
+    min-height: 64px !important;
+    font-size: 1.55rem !important;
+  }
+
+  /* =========================
+     FILTROS MOBILE
+     Aplica nos formulários de filtro que usam app-card
+  ========================= */
+
+  form.app-card {
+    position: relative;
+    overflow: hidden;
+  }
+
+  form.app-card::before {
+    content: "Filtros";
+    display: inline-flex;
+    width: fit-content;
+    align-items: center;
+    border-radius: 999px;
+    margin-bottom: 10px;
+    background: rgba(255, 255, 255, 0.055);
+    padding: 0.38rem 0.7rem;
+    color: rgba(255, 255, 255, 0.62);
+    font-size: 0.72rem;
+    font-weight: 900;
+    letter-spacing: -0.015em;
+  }
+
+  form.app-card label {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 0.45rem;
+    font-size: 0.72rem !important;
+    color: rgba(255, 255, 255, 0.62);
+  }
+
+  form.app-card .finance-input {
+    min-height: 52px;
+    border-radius: 19px;
+  }
+
+  form.app-card .grid {
+    gap: 14px !important;
+  }
+
+  form.app-card .app-button-primary,
+  form.app-card .app-button-secondary,
+  form.app-card button,
+  form.app-card a {
+    min-height: 50px;
+    border-radius: 19px;
+  }
+
+  /* =========================
+     SELECT COM CARA MAIS PREMIUM
+  ========================= */
+
+  select.finance-input {
+    box-shadow:
+      inset 0 1px 0 rgba(255, 255, 255, 0.035),
+      0 10px 24px rgba(0, 0, 0, 0.12);
+  }
+
+  select.finance-input:focus {
+    transform: translateY(-1px);
+  }
+
+  /* =========================
+     ESPAÇAMENTO EM TELAS DE FORMULÁRIO
+  ========================= */
+
+  .mobile-only .app-container,
+  .mobile-only .mobile-transaction-form {
+    width: 100%;
+  }
+
+  .mobile-only .app-container {
+    padding-bottom: 10px;
+  }
+}
+
+@media (max-width: 420px) {
+  .mobile-form-header {
+    border-radius: 28px;
+    padding: 17px;
+  }
+
+  .mobile-form-card {
+    border-radius: 24px;
+    padding: 14px;
+  }
+
+  .mobile-form-card .finance-input {
+    min-height: 52px;
+  }
+
+  .mobile-type-switch__option {
+    min-height: 48px;
+    font-size: 0.8rem;
+  }
+
+  .mobile-form-submit {
+    min-height: 50px;
+    border-radius: 18px;
+  }
+}
