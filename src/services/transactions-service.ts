@@ -1,5 +1,6 @@
 import { prisma } from "@/lib/prisma";
 import { formatCurrency } from "@/lib/utils";
+import { requireSession } from "@/lib/session";
 
 type TransactionTypeFilter = "ALL" | "INCOME" | "EXPENSE";
 type TransactionStatusFilter =
@@ -31,9 +32,11 @@ function getDisplayName(name: string) {
 }
 
 export async function getTransactionFormOptions() {
-  const family = await prisma.family.findFirst({
+  const session = await requireSession();
+
+  const family = await prisma.family.findUnique({
     where: {
-      name: "Flávio & Ana",
+      id: session.familyId,
     },
     include: {
       accounts: {
@@ -60,24 +63,15 @@ export async function getTransactionFormOptions() {
           name: "asc",
         },
       },
-      members: {
-        include: {
-          user: true,
-        },
-        orderBy: {
-          createdAt: "asc",
-        },
-      },
     },
   });
 
   if (!family) {
     return {
-      familyId: "",
+      familyId: session.familyId,
       accounts: [],
       categories: [],
       creditCards: [],
-      users: [],
     };
   }
 
@@ -100,17 +94,15 @@ export async function getTransactionFormOptions() {
       closingDay: card.closingDay,
       dueDay: card.dueDay,
     })),
-    users: family.members.map((member) => ({
-      id: member.user.id,
-      name: getDisplayName(member.user.name),
-    })),
   };
 }
 
 export async function getTransactionsList(filters: TransactionsFilters = {}) {
-  const family = await prisma.family.findFirst({
+  const session = await requireSession();
+
+  const family = await prisma.family.findUnique({
     where: {
-      name: "Flávio & Ana",
+      id: session.familyId,
     },
     include: {
       members: {
@@ -309,11 +301,14 @@ export async function getTransactionsList(filters: TransactionsFilters = {}) {
 }
 
 export async function getTransactionForEdit(transactionId: string) {
+  const session = await requireSession();
+
   const [options, transaction] = await Promise.all([
     getTransactionFormOptions(),
-    prisma.transaction.findUnique({
+    prisma.transaction.findFirst({
       where: {
         id: transactionId,
+        familyId: session.familyId,
       },
     }),
   ]);
@@ -330,7 +325,6 @@ export async function getTransactionForEdit(transactionId: string) {
       accountId: transaction.accountId ?? "",
       creditCardId: transaction.creditCardId ?? "",
       categoryId: transaction.categoryId ?? "",
-      userId: transaction.userId ?? "",
       type: transaction.type,
       description: transaction.description,
       amount: Number(transaction.amount).toFixed(2).replace(".", ","),

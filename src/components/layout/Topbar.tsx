@@ -1,7 +1,20 @@
 import Link from "next/link";
-import { Bell, Plus, Search } from "lucide-react";
+import { Bell, LogOut, Plus, Search } from "lucide-react";
+import { logoutAction } from "@/actions/auth-actions";
+import { getCurrentSession } from "@/lib/session";
 
-export function Topbar() {
+export async function Topbar() {
+  const session = await getCurrentSession();
+
+  const initials = session?.name
+    ? session.name
+        .split(" ")
+        .map((part: string) => part[0])
+        .join("")
+        .slice(0, 2)
+        .toUpperCase()
+    : "US";
+
   return (
     <header className="topbar">
       <div>
@@ -24,13 +37,27 @@ export function Topbar() {
         </Link>
 
         <div className="user-pill">
-          <div className="user-avatar">FO</div>
+          <div className="user-avatar">{initials}</div>
 
           <div className="hidden md:block">
-            <p className="text-xs font-bold text-white">Flávio</p>
-            <p className="text-[11px] app-faint-text">Administrador</p>
+            <p className="text-xs font-bold text-white">
+              {session?.name ?? "Usuário"}
+            </p>
+            <p className="text-[11px] app-faint-text">
+              {session?.email ?? "Sessão ativa"}
+            </p>
           </div>
         </div>
+
+        <form action={logoutAction}>
+          <button
+            type="submit"
+            className="hidden h-11 w-11 items-center justify-center rounded-2xl border border-white/10 bg-white/5 text-white transition hover:bg-white hover:text-black md:flex"
+            title="Sair"
+          >
+            <LogOut className="h-4 w-4" />
+          </button>
+        </form>
       </div>
     </header>
   );

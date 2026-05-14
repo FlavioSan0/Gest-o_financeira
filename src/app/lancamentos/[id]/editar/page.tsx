@@ -28,7 +28,6 @@ export default async function EditTransactionPage({
           accounts={data.options.accounts}
           categories={data.options.categories}
           creditCards={data.options.creditCards}
-          users={data.options.users}
         />
       </div>
     </AppShell>

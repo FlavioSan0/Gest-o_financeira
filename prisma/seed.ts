@@ -1,4 +1,5 @@
 import "dotenv/config";
+import bcrypt from "bcryptjs";
 import { PrismaClient } from "../src/generated/prisma/client";
 import { PrismaPg } from "@prisma/adapter-pg";
 
@@ -13,16 +14,30 @@ const prisma = new PrismaClient({
 async function main() {
   console.log("Iniciando seed do banco...");
 
+  const flavioSeedPassword = process.env.SEED_FLAVIO_PASSWORD;
+  const anaSeedPassword = process.env.SEED_ANA_PASSWORD;
+
+  if (!flavioSeedPassword || !anaSeedPassword) {
+    throw new Error(
+      "Configure SEED_FLAVIO_PASSWORD e SEED_ANA_PASSWORD no .env antes de rodar o seed.",
+    );
+  }
+
+  const flavioPasswordHash = await bcrypt.hash(flavioSeedPassword, 12);
+  const anaPasswordHash = await bcrypt.hash(anaSeedPassword, 12);
+
   const flavio = await prisma.user.upsert({
     where: {
       email: "flavio@financas.local",
     },
     update: {
       name: "Flávio",
+      passwordHash: flavioPasswordHash,
     },
     create: {
       name: "Flávio",
       email: "flavio@financas.local",
+      passwordHash: flavioPasswordHash,
     },
   });
 
@@ -32,10 +47,12 @@ async function main() {
     },
     update: {
       name: "Ana",
+      passwordHash: anaPasswordHash,
     },
     create: {
       name: "Ana",
       email: "ana@financas.local",
+      passwordHash: anaPasswordHash,
     },
   });
 
@@ -122,6 +139,18 @@ async function main() {
           type: "INCOME",
           color: category.color,
           icon: category.icon,
+          active: true,
+        },
+      });
+    } else {
+      await prisma.category.update({
+        where: {
+          id: existing.id,
+        },
+        data: {
+          color: category.color,
+          icon: category.icon,
+          active: true,
         },
       });
     }
@@ -144,6 +173,18 @@ async function main() {
           type: "EXPENSE",
           color: category.color,
           icon: category.icon,
+          active: true,
+        },
+      });
+    } else {
+      await prisma.category.update({
+        where: {
+          id: existing.id,
+        },
+        data: {
+          color: category.color,
+          icon: category.icon,
+          active: true,
         },
       });
     }

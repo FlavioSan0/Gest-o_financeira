@@ -25,42 +25,6 @@ type CreditCardOption = {
   dueDay: number;
 };
 
-type UserOption = {
-  id: string;
-  name: string;
-};
-
-type TransactionEditData = {
-  id: string;
-  familyId: string;
-  accountId: string;
-  creditCardId: string;
-  categoryId: string;
-  userId: string;
-  type: "INCOME" | "EXPENSE";
-  description: string;
-  amount: string;
-  transactionDate: string;
-  status: "PAID" | "PENDING" | "OVERDUE" | "CANCELED";
-  paymentMethod:
-    | "PIX"
-    | "CASH"
-    | "DEBIT_CARD"
-    | "CREDIT_CARD"
-    | "BANK_TRANSFER"
-    | "BOLETO"
-    | "OTHER";
-  notes: string;
-};
-
-type TransactionEditFormProps = {
-  transaction: TransactionEditData;
-  accounts: AccountOption[];
-  categories: CategoryOption[];
-  creditCards: CreditCardOption[];
-  users: UserOption[];
-};
-
 type PaymentMethod =
   | "PIX"
   | "CASH"
@@ -70,20 +34,41 @@ type PaymentMethod =
   | "BOLETO"
   | "OTHER";
 
+type TransactionEditData = {
+  id: string;
+  familyId: string;
+  accountId: string;
+  creditCardId: string;
+  categoryId: string;
+  type: "INCOME" | "EXPENSE";
+  description: string;
+  amount: string;
+  transactionDate: string;
+  status: "PAID" | "PENDING" | "OVERDUE" | "CANCELED";
+  paymentMethod: PaymentMethod;
+  notes: string;
+};
+
+type TransactionEditFormProps = {
+  transaction: TransactionEditData;
+  accounts: AccountOption[];
+  categories: CategoryOption[];
+  creditCards: CreditCardOption[];
+};
+
 export function TransactionEditForm({
   transaction,
   accounts,
   categories,
   creditCards,
-  users,
 }: TransactionEditFormProps) {
   const [transactionType, setTransactionType] = useState<"INCOME" | "EXPENSE">(
     transaction.type,
   );
-
   const [paymentMethod, setPaymentMethod] = useState<PaymentMethod>(
-  transaction.paymentMethod,
-);
+    transaction.paymentMethod,
+  );
+
   const isIncome = transactionType === "INCOME";
   const isExpense = transactionType === "EXPENSE";
   const isCreditCardPayment = isExpense && paymentMethod === "CREDIT_CARD";
@@ -351,33 +336,15 @@ export function TransactionEditForm({
 
             <div>
               <label className="mb-2 block text-sm font-bold text-white">
-                Responsável
-              </label>
-
-              <select
-                name="userId"
-                defaultValue={transaction.userId}
-                className="finance-input"
-              >
-                <option value="">Não informado</option>
-
-                {users.map((user) => (
-                  <option key={user.id} value={user.id}>
-                    {user.name}
-                  </option>
-                ))}
-              </select>
-            </div>
-
-            <div>
-              <label className="mb-2 block text-sm font-bold text-white">
                 {isIncome ? "Forma de recebimento" : "Forma de pagamento"}
               </label>
 
               <select
                 name="paymentMethod"
                 value={paymentMethod}
-                onChange={(event) => setPaymentMethod(event.target.value as PaymentMethod)}
+                onChange={(event) =>
+                  setPaymentMethod(event.target.value as PaymentMethod)
+                }
                 className="finance-input"
               >
                 {paymentOptions.map((option) => (

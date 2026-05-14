@@ -51,16 +51,16 @@ enum GoalStatus {
 }
 
 model User {
-  id           String   @id @default(cuid())
+  id           String    @id @default(cuid())
   name         String
-  email        String   @unique
+  email        String    @unique
   passwordHash String?
+  lastLoginAt  DateTime?
+  createdAt    DateTime  @default(now())
+  updatedAt    DateTime  @updatedAt
 
   memberships  FamilyMember[]
   transactions Transaction[]
-
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
 
   @@map("users")
 }
@@ -125,8 +125,8 @@ model Category {
   icon     String?
   active   Boolean         @default(true)
 
-  family        Family          @relation(fields: [familyId], references: [id], onDelete: Cascade)
-  transactions  Transaction[]
+  family         Family          @relation(fields: [familyId], references: [id], onDelete: Cascade)
+  transactions   Transaction[]
   recurringBills RecurringBill[]
 
   createdAt DateTime @default(now())
@@ -136,29 +136,29 @@ model Category {
 }
 
 model Transaction {
-  id          String            @id @default(cuid())
-  familyId    String
-  accountId   String?
-  categoryId  String?
-  userId      String?
+  id         String  @id @default(cuid())
+  familyId   String
+  accountId  String?
+  categoryId String?
+  userId     String?
 
-  type        TransactionType
-  description String
-  amount      Decimal
+  type            TransactionType
+  description     String
+  amount          Decimal
   transactionDate DateTime
-  dueDate     DateTime?
-  paidAt      DateTime?
-  status      TransactionStatus @default(PENDING)
-  paymentMethod PaymentMethod   @default(OTHER)
-  notes       String?
+  dueDate         DateTime?
+  paidAt          DateTime?
+  status          TransactionStatus @default(PENDING)
+  paymentMethod   PaymentMethod     @default(OTHER)
+  notes           String?
 
   creditCardId String?
   invoiceId    String?
 
-  family     Family    @relation(fields: [familyId], references: [id], onDelete: Cascade)
-  account    Account?  @relation(fields: [accountId], references: [id], onDelete: SetNull)
-  category   Category? @relation(fields: [categoryId], references: [id], onDelete: SetNull)
-  user       User?     @relation(fields: [userId], references: [id], onDelete: SetNull)
+  family   Family    @relation(fields: [familyId], references: [id], onDelete: Cascade)
+  account  Account?  @relation(fields: [accountId], references: [id], onDelete: SetNull)
+  category Category? @relation(fields: [categoryId], references: [id], onDelete: SetNull)
+  user     User?     @relation(fields: [userId], references: [id], onDelete: SetNull)
 
   creditCard CreditCard?  @relation(fields: [creditCardId], references: [id], onDelete: SetNull)
   invoice    CardInvoice? @relation(fields: [invoiceId], references: [id], onDelete: SetNull)
@@ -209,14 +209,14 @@ model CardInvoice {
 }
 
 model RecurringBill {
-  id          String          @id @default(cuid())
+  id          String  @id @default(cuid())
   familyId    String
   categoryId  String?
   description String
   amount      Decimal
   dueDay      Int
-  frequency   String          @default("MONTHLY")
-  active      Boolean         @default(true)
+  frequency   String  @default("MONTHLY")
+  active      Boolean @default(true)
 
   family   Family    @relation(fields: [familyId], references: [id], onDelete: Cascade)
   category Category? @relation(fields: [categoryId], references: [id], onDelete: SetNull)

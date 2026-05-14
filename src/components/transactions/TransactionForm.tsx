@@ -25,17 +25,11 @@ type CreditCardOption = {
   dueDay: number;
 };
 
-type UserOption = {
-  id: string;
-  name: string;
-};
-
 type TransactionFormProps = {
   familyId: string;
   accounts: AccountOption[];
   categories: CategoryOption[];
   creditCards: CreditCardOption[];
-  users: UserOption[];
 };
 
 export function TransactionForm({
@@ -43,7 +37,6 @@ export function TransactionForm({
   accounts,
   categories,
   creditCards,
-  users,
 }: TransactionFormProps) {
   const [transactionType, setTransactionType] = useState<"INCOME" | "EXPENSE">(
     "EXPENSE",
@@ -107,8 +100,8 @@ export function TransactionForm({
 
           <p className="mt-2 text-sm app-muted-text">
             {isIncome
-              ? "Registre uma entrada recebida para atualizar seu controle financeiro."
-              : "Registre uma saída, conta ou pagamento para atualizar seu controle financeiro."}
+              ? "Registre uma entrada recebida. O responsável será definido automaticamente pelo login."
+              : "Registre uma saída, conta ou pagamento. O responsável será definido automaticamente pelo login."}
           </p>
         </div>
 
@@ -282,22 +275,6 @@ export function TransactionForm({
                 {filteredCategories.map((category) => (
                   <option key={category.id} value={category.id}>
                     {category.name}
-                  </option>
-                ))}
-              </select>
-            </div>
-
-            <div>
-              <label className="mb-2 block text-sm font-bold text-white">
-                Responsável
-              </label>
-
-              <select name="userId" className="finance-input">
-                <option value="">Não informado</option>
-
-                {users.map((user) => (
-                  <option key={user.id} value={user.id}>
-                    {user.name}
                   </option>
                 ))}
               </select>

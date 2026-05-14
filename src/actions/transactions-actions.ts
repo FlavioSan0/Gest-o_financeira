@@ -3,6 +3,7 @@
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 import { prisma } from "@/lib/prisma";
+import { requireSession } from "@/lib/session";
 
 type TransactionType = "INCOME" | "EXPENSE";
 type TransactionStatus = "PAID" | "PENDING" | "OVERDUE" | "CANCELED";
@@ -107,16 +108,84 @@ async function revertAccountImpact(input: AccountImpactInput) {
   });
 }
 
+async function validateAccountBelongsToFamily(
+  accountId: string | null,
+  familyId: string,
+) {
+  if (!accountId) {
+    return;
+  }
+
+  const account = await prisma.account.findFirst({
+    where: {
+      id: accountId,
+      familyId,
+      active: true,
+    },
+  });
+
+  if (!account) {
+    throw new Error("Conta inválida para esta família.");
+  }
+}
+
+async function validateCategoryBelongsToFamily(
+  categoryId: string | null,
+  familyId: string,
+) {
+  if (!categoryId) {
+    return;
+  }
+
+  const category = await prisma.category.findFirst({
+    where: {
+      id: categoryId,
+      familyId,
+      active: true,
+    },
+  });
+
+  if (!category) {
+    throw new Error("Categoria inválida para esta família.");
+  }
+}
+
+async function validateCreditCardBelongsToFamily(
+  creditCardId: string | null,
+  familyId: string,
+) {
+  if (!creditCardId) {
+    return;
+  }
+
+  const creditCard = await prisma.creditCard.findFirst({
+    where: {
+      id: creditCardId,
+      familyId,
+      active: true,
+    },
+  });
+
+  if (!creditCard) {
+    throw new Error("Cartão inválido para esta família.");
+  }
+}
+
 function revalidateFinancialPages() {
   revalidatePath("/");
   revalidatePath("/lancamentos");
   revalidatePath("/lancamentos/novo");
   revalidatePath("/contas");
   revalidatePath("/cartoes");
+  revalidatePath("/cartoes/faturas");
 }
 
 export async function createTransactionAction(formData: FormData) {
-  const familyId = getRequiredValue(formData, "familyId");
+  const session = await requireSession();
+
+  const familyId = session.familyId;
+  const userId = session.userId;
+
   const type = getRequiredValue(formData, "type") as TransactionType;
   const description = getRequiredValue(formData, "description");
   const amount = parseCurrencyValue(getRequiredValue(formData, "amount"));
@@ -136,14 +205,17 @@ export async function createTransactionAction(formData: FormData) {
     : null;
 
   const categoryId = getOptionalValue(formData, "categoryId");
-  const userId = getOptionalValue(formData, "userId");
   const notes = getOptionalValue(formData, "notes");
 
   const status = (getOptionalValue(formData, "status") ??
     "PAID") as TransactionStatus;
 
   await prisma.$transaction(async () => {
-    await prisma.transaction.create({
+    await validateAccountBelongsToFamily(accountId, familyId);
+    await validateCategoryBelongsToFamily(categoryId, familyId);
+    await validateCreditCardBelongsToFamily(creditCardId, familyId);
+
+    const createdTransaction = await prisma.transaction.create({
       data: {
         familyId,
         accountId,
@@ -161,6 +233,10 @@ export async function createTransactionAction(formData: FormData) {
       },
     });
 
+    if (!createdTransaction.userId) {
+      throw new Error("Falha ao vincular o lançamento ao usuário logado.");
+    }
+
     if (!isCreditCardPayment) {
       await applyAccountImpact({
         accountId,
@@ -177,6 +253,8 @@ export async function createTransactionAction(formData: FormData) {
 }
 
 export async function updateTransactionAction(formData: FormData) {
+  const session = await requireSession();
+
   const transactionId = getRequiredValue(formData, "transactionId");
   const type = getRequiredValue(formData, "type") as TransactionType;
   const description = getRequiredValue(formData, "description");
@@ -197,7 +275,6 @@ export async function updateTransactionAction(formData: FormData) {
     : null;
 
   const categoryId = getOptionalValue(formData, "categoryId");
-  const userId = getOptionalValue(formData, "userId");
   const notes = getOptionalValue(formData, "notes");
 
   const status = (getOptionalValue(formData, "status") ??
@@ -210,9 +287,13 @@ export async function updateTransactionAction(formData: FormData) {
       },
     });
 
-    if (!oldTransaction) {
+    if (!oldTransaction || oldTransaction.familyId !== session.familyId) {
       throw new Error("Lançamento não encontrado.");
     }
+
+    await validateAccountBelongsToFamily(accountId, session.familyId);
+    await validateCategoryBelongsToFamily(categoryId, session.familyId);
+    await validateCreditCardBelongsToFamily(creditCardId, session.familyId);
 
     if (oldTransaction.paymentMethod !== "CREDIT_CARD") {
       await revertAccountImpact({
@@ -231,7 +312,6 @@ export async function updateTransactionAction(formData: FormData) {
         accountId,
         creditCardId,
         categoryId,
-        userId,
         type,
         description,
         amount,
@@ -259,6 +339,8 @@ export async function updateTransactionAction(formData: FormData) {
 }
 
 export async function deleteTransactionAction(formData: FormData) {
+  const session = await requireSession();
+
   const transactionId = getRequiredValue(formData, "transactionId");
 
   await prisma.$transaction(async () => {
@@ -268,7 +350,7 @@ export async function deleteTransactionAction(formData: FormData) {
       },
     });
 
-    if (!transaction) {
+    if (!transaction || transaction.familyId !== session.familyId) {
       throw new Error("Lançamento não encontrado.");
     }
 

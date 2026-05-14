@@ -13,7 +13,6 @@ export default async function NewTransactionPage() {
           accounts={options.accounts}
           categories={options.categories}
           creditCards={options.creditCards}
-          users={options.users}
         />
       </div>
     </AppShell>
