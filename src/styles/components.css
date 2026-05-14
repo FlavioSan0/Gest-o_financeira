@@ -1,0 +1,312 @@
+.app-shell {
+  min-height: 100vh;
+  color: var(--color-text-primary);
+}
+
+.app-layout {
+  position: relative;
+  display: grid;
+  min-height: 100vh;
+  grid-template-columns: var(--sidebar-width) minmax(0, 1fr);
+}
+
+.app-main {
+  min-width: 0;
+  padding: 1rem;
+}
+
+.app-page {
+  min-height: calc(100vh - 2rem);
+  overflow: hidden;
+  border: 1px solid var(--color-border);
+  border-radius: 2rem;
+  background: rgba(255, 255, 255, 0.025);
+  backdrop-filter: blur(22px);
+}
+
+.app-content {
+  padding: 1.5rem;
+}
+
+.app-container {
+  width: 100%;
+  max-width: 88rem;
+  margin: 0 auto;
+}
+
+.app-card {
+  border: 1px solid var(--color-border);
+  background: rgba(255, 255, 255, 0.04);
+  border-radius: var(--radius-card);
+  box-shadow: var(--shadow-card);
+  backdrop-filter: blur(20px);
+}
+
+.app-card-solid {
+  border: 1px solid var(--color-border);
+  background: var(--color-card);
+  border-radius: var(--radius-card);
+  box-shadow: var(--shadow-card);
+}
+
+.app-card-light {
+  background: var(--color-white-accent);
+  color: #000000;
+  border-radius: var(--radius-card);
+  box-shadow: var(--shadow-white-soft);
+}
+
+.app-button-primary {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+  border: 1px solid var(--color-border-strong);
+  background: var(--color-white-accent);
+  color: #000000;
+  border-radius: var(--radius-button);
+  padding: 0.75rem 1.25rem;
+  font-size: 0.875rem;
+  font-weight: 800;
+  box-shadow: var(--shadow-white-soft);
+  transition:
+    transform 0.2s ease,
+    background 0.2s ease,
+    opacity 0.2s ease;
+}
+
+.app-button-primary:hover {
+  transform: scale(1.02);
+  background: rgba(255, 255, 255, 0.9);
+}
+
+.app-button-secondary {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+  border: 1px solid var(--color-border-strong);
+  background: rgba(255, 255, 255, 0.08);
+  color: var(--color-text-primary);
+  border-radius: var(--radius-button);
+  padding: 0.75rem 1rem;
+  font-size: 0.875rem;
+  font-weight: 800;
+  transition:
+    background 0.2s ease,
+    color 0.2s ease;
+}
+
+.app-button-secondary:hover {
+  background: var(--color-white-accent);
+  color: #000000;
+}
+
+.app-icon-box {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 1rem;
+  background: var(--color-white-accent);
+  color: #000000;
+  box-shadow: var(--shadow-white-soft);
+}
+
+.app-muted-text {
+  color: var(--color-text-secondary);
+}
+
+.app-faint-text {
+  color: var(--color-text-muted);
+}
+
+.sidebar {
+  position: sticky;
+  top: 0;
+  height: 100vh;
+  padding: 1rem 0 1rem 1rem;
+}
+
+.sidebar-inner {
+  display: flex;
+  height: 100%;
+  flex-direction: column;
+  border: 1px solid var(--color-border);
+  border-radius: 2rem;
+  background: var(--color-sidebar);
+  padding: 1rem;
+  backdrop-filter: blur(22px);
+}
+
+.sidebar-logo {
+  display: flex;
+  align-items: center;
+  gap: 0.875rem;
+  padding: 0.5rem;
+}
+
+.sidebar-nav {
+  margin-top: 1.5rem;
+  display: grid;
+  gap: 0.35rem;
+}
+
+.sidebar-link {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  border: 1px solid transparent;
+  border-radius: 1rem;
+  padding: 0.8rem 0.9rem;
+  color: var(--color-text-secondary);
+  transition:
+    background 0.2s ease,
+    color 0.2s ease,
+    border 0.2s ease;
+}
+
+.sidebar-link:hover {
+  border-color: var(--color-border);
+  background: rgba(255, 255, 255, 0.06);
+  color: var(--color-text-primary);
+}
+
+.sidebar-link-active {
+  border-color: var(--color-border-strong);
+  background: var(--color-white-accent);
+  color: #000000;
+  box-shadow: var(--shadow-white-soft);
+}
+
+.sidebar-footer {
+  margin-top: auto;
+  border-top: 1px solid var(--color-border);
+  padding-top: 1rem;
+}
+
+.topbar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1.5rem;
+  border-bottom: 1px solid var(--color-border);
+  background: var(--color-topbar);
+  padding: 1.1rem 1.5rem;
+  backdrop-filter: blur(20px);
+}
+
+.topbar-title {
+  font-size: 1.35rem;
+  font-weight: 850;
+  letter-spacing: -0.04em;
+}
+
+.topbar-actions {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+}
+
+.user-pill {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  border: 1px solid var(--color-border);
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.05);
+  padding: 0.45rem 0.75rem 0.45rem 0.45rem;
+}
+
+.user-avatar {
+  display: flex;
+  height: 2.1rem;
+  width: 2.1rem;
+  align-items: center;
+  justify-content: center;
+  border-radius: 999px;
+  background: var(--color-white-accent);
+  color: #000000;
+  font-size: 0.8rem;
+  font-weight: 900;
+}
+
+@media (max-width: 1024px) {
+  .app-layout {
+    grid-template-columns: 1fr;
+  }
+
+  .sidebar {
+    display: none;
+  }
+
+  .app-main {
+    padding: 0.75rem;
+  }
+
+  .app-content {
+    padding: 1rem;
+  }
+
+  .topbar {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+
+  .topbar-actions {
+    width: 100%;
+    justify-content: space-between;
+  }
+}
+
+.finance-input {
+  width: 100%;
+  border: 1px solid var(--color-border);
+  border-radius: 1rem;
+  background: rgba(0, 0, 0, 0.32);
+  padding: 0.85rem 1rem;
+  color: var(--color-text-primary);
+  outline: none;
+  transition:
+    border 0.2s ease,
+    background 0.2s ease,
+    box-shadow 0.2s ease;
+}
+
+.finance-input::placeholder {
+  color: var(--color-text-muted);
+}
+
+.finance-input:focus {
+  border-color: var(--color-border-strong);
+  background: rgba(0, 0, 0, 0.48);
+  box-shadow: 0 0 0 4px rgba(255, 255, 255, 0.06);
+}
+
+.finance-input option {
+  background: #020617;
+  color: #ffffff;
+}
+
+.finance-input {
+  appearance: none;
+  -webkit-appearance: none;
+  -moz-appearance: none;
+}
+
+select.finance-input {
+  background-image:
+    linear-gradient(45deg, transparent 50%, rgba(255, 255, 255, 0.65) 50%),
+    linear-gradient(135deg, rgba(255, 255, 255, 0.65) 50%, transparent 50%);
+  background-position:
+    calc(100% - 18px) calc(50% - 3px),
+    calc(100% - 13px) calc(50% - 3px);
+  background-size:
+    5px 5px,
+    5px 5px;
+  background-repeat: no-repeat;
+  padding-right: 2.75rem;
+}
+
+select.finance-input::-ms-expand {
+  display: none;
+}

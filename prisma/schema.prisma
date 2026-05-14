@@ -1,0 +1,245 @@
+generator client {
+  provider = "prisma-client"
+  output   = "../src/generated/prisma"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+enum UserRole {
+  OWNER
+  MEMBER
+}
+
+enum AccountType {
+  CHECKING
+  SAVINGS
+  CASH
+  WALLET
+  INVESTMENT
+  OTHER
+}
+
+enum TransactionType {
+  INCOME
+  EXPENSE
+}
+
+enum TransactionStatus {
+  PAID
+  PENDING
+  OVERDUE
+  CANCELED
+}
+
+enum PaymentMethod {
+  PIX
+  CASH
+  DEBIT_CARD
+  CREDIT_CARD
+  BANK_TRANSFER
+  BOLETO
+  OTHER
+}
+
+enum GoalStatus {
+  ACTIVE
+  COMPLETED
+  PAUSED
+  CANCELED
+}
+
+model User {
+  id           String   @id @default(cuid())
+  name         String
+  email        String   @unique
+  passwordHash String?
+
+  memberships  FamilyMember[]
+  transactions Transaction[]
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@map("users")
+}
+
+model Family {
+  id   String @id @default(cuid())
+  name String
+
+  members        FamilyMember[]
+  accounts       Account[]
+  categories     Category[]
+  transactions   Transaction[]
+  creditCards    CreditCard[]
+  recurringBills RecurringBill[]
+  goals          Goal[]
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@map("families")
+}
+
+model FamilyMember {
+  id       String   @id @default(cuid())
+  familyId String
+  userId   String
+  role     UserRole @default(MEMBER)
+
+  family Family @relation(fields: [familyId], references: [id], onDelete: Cascade)
+  user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  createdAt DateTime @default(now())
+
+  @@unique([familyId, userId])
+  @@map("family_members")
+}
+
+model Account {
+  id             String      @id @default(cuid())
+  familyId       String
+  name           String
+  type           AccountType @default(CHECKING)
+  initialBalance Decimal     @default(0)
+  currentBalance Decimal     @default(0)
+  active         Boolean     @default(true)
+
+  family       Family        @relation(fields: [familyId], references: [id], onDelete: Cascade)
+  transactions Transaction[]
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@map("accounts")
+}
+
+model Category {
+  id       String          @id @default(cuid())
+  familyId String
+  name     String
+  type     TransactionType
+  color    String?
+  icon     String?
+  active   Boolean         @default(true)
+
+  family        Family          @relation(fields: [familyId], references: [id], onDelete: Cascade)
+  transactions  Transaction[]
+  recurringBills RecurringBill[]
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@map("categories")
+}
+
+model Transaction {
+  id          String            @id @default(cuid())
+  familyId    String
+  accountId   String?
+  categoryId  String?
+  userId      String?
+
+  type        TransactionType
+  description String
+  amount      Decimal
+  transactionDate DateTime
+  dueDate     DateTime?
+  paidAt      DateTime?
+  status      TransactionStatus @default(PENDING)
+  paymentMethod PaymentMethod   @default(OTHER)
+  notes       String?
+
+  creditCardId String?
+  invoiceId    String?
+
+  family     Family    @relation(fields: [familyId], references: [id], onDelete: Cascade)
+  account    Account?  @relation(fields: [accountId], references: [id], onDelete: SetNull)
+  category   Category? @relation(fields: [categoryId], references: [id], onDelete: SetNull)
+  user       User?     @relation(fields: [userId], references: [id], onDelete: SetNull)
+
+  creditCard CreditCard?  @relation(fields: [creditCardId], references: [id], onDelete: SetNull)
+  invoice    CardInvoice? @relation(fields: [invoiceId], references: [id], onDelete: SetNull)
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@map("transactions")
+}
+
+model CreditCard {
+  id          String  @id @default(cuid())
+  familyId    String
+  name        String
+  bank        String?
+  limitAmount Decimal @default(0)
+  closingDay  Int
+  dueDay      Int
+  active      Boolean @default(true)
+
+  family       Family        @relation(fields: [familyId], references: [id], onDelete: Cascade)
+  invoices     CardInvoice[]
+  transactions Transaction[]
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@map("credit_cards")
+}
+
+model CardInvoice {
+  id           String            @id @default(cuid())
+  creditCardId String
+  month        Int
+  year         Int
+  totalAmount  Decimal           @default(0)
+  status       TransactionStatus @default(PENDING)
+  dueDate      DateTime?
+
+  creditCard   CreditCard    @relation(fields: [creditCardId], references: [id], onDelete: Cascade)
+  transactions Transaction[]
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@unique([creditCardId, month, year])
+  @@map("card_invoices")
+}
+
+model RecurringBill {
+  id          String          @id @default(cuid())
+  familyId    String
+  categoryId  String?
+  description String
+  amount      Decimal
+  dueDay      Int
+  frequency   String          @default("MONTHLY")
+  active      Boolean         @default(true)
+
+  family   Family    @relation(fields: [familyId], references: [id], onDelete: Cascade)
+  category Category? @relation(fields: [categoryId], references: [id], onDelete: SetNull)
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@map("recurring_bills")
+}
+
+model Goal {
+  id            String     @id @default(cuid())
+  familyId      String
+  name          String
+  targetAmount  Decimal
+  currentAmount Decimal    @default(0)
+  deadline      DateTime?
+  status        GoalStatus @default(ACTIVE)
+
+  family Family @relation(fields: [familyId], references: [id], onDelete: Cascade)
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@map("goals")
+}
