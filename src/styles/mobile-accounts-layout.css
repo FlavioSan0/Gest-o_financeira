@@ -1,0 +1,594 @@
+/* =========================================================
+   MOBILE ACCOUNTS STRUCTURE
+   Tela /contas separada da versão desktop
+========================================================= */
+
+@media (max-width: 900px) {
+  .mobile-accounts-page {
+    display: grid;
+    gap: 18px;
+    padding-bottom: 10px;
+  }
+
+  .mobile-accounts {
+    display: grid;
+    gap: 18px;
+  }
+
+  .mobile-accounts-hero {
+    position: relative;
+    display: grid;
+    overflow: hidden;
+    border-radius: 30px;
+    border: 1px solid rgba(255, 255, 255, 0.08);
+    background:
+      radial-gradient(circle at top right, rgba(255, 255, 255, 0.07), transparent 9rem),
+      linear-gradient(180deg, rgba(255, 255, 255, 0.07), rgba(255, 255, 255, 0.026)),
+      rgba(8, 13, 27, 0.84);
+    padding: 18px;
+  }
+
+  .mobile-accounts-hero::after {
+    content: "";
+    position: absolute;
+    right: -52px;
+    top: -58px;
+    height: 140px;
+    width: 140px;
+    border-radius: 999px;
+    background: rgba(255, 255, 255, 0.035);
+    pointer-events: none;
+  }
+
+  .mobile-accounts-hero > * {
+    position: relative;
+    z-index: 1;
+  }
+
+  .mobile-accounts-hero h2 {
+    margin-top: 0.2rem;
+    font-size: 2rem;
+    font-weight: 950;
+    line-height: 0.95;
+    letter-spacing: -0.07em;
+    color: #ffffff;
+  }
+
+  .mobile-accounts-hero span {
+    margin-top: 0.65rem;
+    display: inline-flex;
+    width: fit-content;
+    border-radius: 999px;
+    background: rgba(255, 255, 255, 0.06);
+    padding: 0.4rem 0.65rem;
+    color: rgba(255, 255, 255, 0.54);
+    font-size: 0.72rem;
+    font-weight: 850;
+  }
+
+  .mobile-accounts-balance {
+    display: grid;
+    gap: 16px;
+    border-radius: 30px;
+    background:
+      radial-gradient(circle at top right, rgba(255, 255, 255, 0.16), transparent 9rem),
+      linear-gradient(180deg, rgba(255, 255, 255, 1), rgba(235, 238, 244, 0.96));
+    color: #020617;
+    padding: 18px;
+    box-shadow:
+      0 20px 55px rgba(255, 255, 255, 0.08),
+      0 24px 60px rgba(0, 0, 0, 0.3);
+  }
+
+  .mobile-accounts-balance__top {
+    display: flex;
+    justify-content: space-between;
+    gap: 16px;
+  }
+
+  .mobile-accounts-balance__top span {
+    font-size: 0.78rem;
+    font-weight: 850;
+    color: rgba(2, 6, 23, 0.52);
+  }
+
+  .mobile-accounts-balance__top strong {
+    margin-top: 0.35rem;
+    display: block;
+    font-size: clamp(1.9rem, 9vw, 2.55rem);
+    font-weight: 950;
+    line-height: 0.95;
+    letter-spacing: -0.075em;
+  }
+
+  .mobile-accounts-balance__icon {
+    display: flex;
+    height: 46px;
+    width: 46px;
+    align-items: center;
+    justify-content: center;
+    border-radius: 18px;
+    background: #020617;
+    color: #ffffff;
+  }
+
+  .mobile-accounts-balance__grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 10px;
+  }
+
+  .mobile-accounts-balance__grid div {
+    border-radius: 20px;
+    background: rgba(2, 6, 23, 0.06);
+    padding: 12px;
+  }
+
+  .mobile-accounts-balance__grid span {
+    display: block;
+    font-size: 0.72rem;
+    font-weight: 800;
+    color: rgba(2, 6, 23, 0.48);
+  }
+
+  .mobile-accounts-balance__grid b {
+    margin-top: 0.28rem;
+    display: block;
+    font-size: 0.92rem;
+    font-weight: 950;
+  }
+
+  .mobile-accounts-stats {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 10px;
+  }
+
+  .mobile-accounts-stats article {
+    display: grid;
+    gap: 8px;
+    border-radius: 24px;
+    border: 1px solid rgba(255, 255, 255, 0.08);
+    background:
+      linear-gradient(180deg, rgba(255, 255, 255, 0.055), rgba(255, 255, 255, 0.02)),
+      rgba(8, 13, 27, 0.78);
+    padding: 14px;
+  }
+
+  .mobile-accounts-stats article div {
+    display: flex;
+    height: 34px;
+    width: 34px;
+    align-items: center;
+    justify-content: center;
+    border-radius: 13px;
+    background: #ffffff;
+    color: #020617;
+  }
+
+  .mobile-accounts-stats span {
+    font-size: 0.76rem;
+    font-weight: 850;
+    color: rgba(255, 255, 255, 0.52);
+  }
+
+  .mobile-accounts-stats strong {
+    font-size: 1.35rem;
+    font-weight: 950;
+    letter-spacing: -0.055em;
+  }
+
+  .mobile-accounts-counter {
+    display: inline-flex;
+    height: 30px;
+    min-width: 30px;
+    align-items: center;
+    justify-content: center;
+    border-radius: 999px;
+    background: rgba(255, 255, 255, 0.075);
+    color: rgba(255, 255, 255, 0.68);
+    font-size: 0.78rem;
+    font-weight: 950;
+  }
+
+  .mobile-accounts-list {
+    display: grid;
+    gap: 12px;
+  }
+
+  .mobile-account-card {
+    display: grid;
+    gap: 14px;
+    border-radius: 26px;
+    border: 1px solid rgba(255, 255, 255, 0.085);
+    background:
+      linear-gradient(180deg, rgba(255, 255, 255, 0.06), rgba(255, 255, 255, 0.024)),
+      rgba(8, 13, 27, 0.78);
+    padding: 15px;
+  }
+
+  .mobile-account-card--inactive {
+    opacity: 0.62;
+  }
+
+  .mobile-account-card__top {
+    display: grid;
+    grid-template-columns: auto minmax(0, 1fr) auto;
+    align-items: center;
+    gap: 12px;
+  }
+
+  .mobile-account-card__icon {
+    display: flex;
+    height: 44px;
+    width: 44px;
+    align-items: center;
+    justify-content: center;
+    border-radius: 17px;
+    background: rgba(255, 255, 255, 0.09);
+    color: #ffffff;
+  }
+
+  .mobile-account-card__title {
+    min-width: 0;
+  }
+
+  .mobile-account-card__title strong {
+    display: block;
+    overflow: hidden;
+    color: #ffffff;
+    font-size: 0.96rem;
+    font-weight: 950;
+    letter-spacing: -0.035em;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+
+  .mobile-account-card__title span {
+    margin-top: 0.18rem;
+    display: block;
+    overflow: hidden;
+    color: rgba(255, 255, 255, 0.46);
+    font-size: 0.72rem;
+    font-weight: 750;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+
+  .mobile-account-card__status {
+    border-radius: 999px;
+    background: rgba(255, 255, 255, 0.055);
+    padding: 0.32rem 0.52rem;
+    color: rgba(255, 255, 255, 0.5);
+    font-size: 0.68rem;
+    font-weight: 900;
+  }
+
+  .mobile-account-card__status.active {
+    background: rgba(34, 197, 94, 0.12);
+    color: #22c55e;
+  }
+
+  .mobile-account-card__balance {
+    display: grid;
+    gap: 4px;
+  }
+
+  .mobile-account-card__balance span,
+  .mobile-account-card__meta span {
+    color: rgba(255, 255, 255, 0.46);
+    font-size: 0.72rem;
+    font-weight: 800;
+  }
+
+  .mobile-account-card__balance strong {
+    color: #ffffff;
+    font-size: 1.55rem;
+    font-weight: 950;
+    line-height: 1;
+    letter-spacing: -0.06em;
+  }
+
+  .mobile-account-card__meta {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 10px;
+    border-radius: 18px;
+    background: rgba(0, 0, 0, 0.22);
+    padding: 11px 12px;
+  }
+
+  .mobile-account-card__meta strong {
+    color: rgba(255, 255, 255, 0.72);
+    font-size: 0.84rem;
+    font-weight: 950;
+  }
+
+  .mobile-account-card__action {
+    display: flex;
+  }
+
+  .mobile-account-card__action button {
+    width: 100%;
+    min-height: 46px;
+    border-radius: 18px !important;
+  }
+
+  .mobile-accounts-form-section {
+    display: grid;
+    gap: 12px;
+  }
+
+  .mobile-accounts-form-section > .app-card,
+  .mobile-accounts-form-section form {
+    border-radius: 28px;
+  }
+}
+
+@media (max-width: 380px) {
+  .mobile-accounts-balance__grid,
+  .mobile-accounts-stats {
+    grid-template-columns: 1fr;
+  }
+
+  .mobile-account-card__top {
+    grid-template-columns: auto minmax(0, 1fr);
+  }
+
+  .mobile-account-card__status {
+    grid-column: 1 / -1;
+    width: fit-content;
+  }
+}
+
+/* =========================================================
+   ACCOUNT TOGGLE BUTTON / MODAL
+   Botão de ativar/inativar conta
+========================================================= */
+
+.account-toggle-button {
+  display: inline-flex;
+  min-height: 2.65rem;
+  align-items: center;
+  justify-content: center;
+  gap: 0.45rem;
+  border-radius: 1rem;
+  padding: 0.65rem 0.95rem;
+  font-size: 0.76rem;
+  font-weight: 950;
+  transition:
+    transform 0.18s ease,
+    border-color 0.18s ease,
+    background 0.18s ease,
+    color 0.18s ease;
+}
+
+.account-toggle-button:active {
+  transform: scale(0.97);
+}
+
+.account-toggle-button--inactive-action {
+  border: 1px solid rgba(245, 158, 11, 0.24);
+  background: rgba(245, 158, 11, 0.1);
+  color: #f59e0b;
+}
+
+.account-toggle-button--inactive-action:hover {
+  background: #f59e0b;
+  color: #020617;
+}
+
+.account-toggle-button--active-action {
+  border: 1px solid rgba(34, 197, 94, 0.24);
+  background: rgba(34, 197, 94, 0.1);
+  color: #22c55e;
+}
+
+.account-toggle-button--active-action:hover {
+  background: #22c55e;
+  color: #020617;
+}
+
+.account-toggle-button__mobile-label {
+  display: none;
+}
+
+.account-confirmation-modal {
+  position: fixed;
+  inset: 0;
+  z-index: 10000;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: rgba(0, 0, 0, 0.76);
+  padding: 1rem;
+  backdrop-filter: blur(14px);
+}
+
+.account-confirmation-modal__card {
+  position: relative;
+  width: min(100%, 28rem);
+  overflow: hidden;
+  border-radius: 2rem;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  background:
+    radial-gradient(circle at top right, rgba(255, 255, 255, 0.07), transparent 10rem),
+    linear-gradient(180deg, rgba(255, 255, 255, 0.07), rgba(255, 255, 255, 0.026)),
+    #070a12;
+  padding: 1.5rem;
+  box-shadow: 0 28px 90px rgba(0, 0, 0, 0.58);
+}
+
+.account-confirmation-modal__top {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 1rem;
+}
+
+.account-confirmation-modal__icon {
+  display: flex;
+  height: 3rem;
+  width: 3rem;
+  align-items: center;
+  justify-content: center;
+  border-radius: 1.1rem;
+}
+
+.account-confirmation-modal__icon--warning {
+  border: 1px solid rgba(245, 158, 11, 0.22);
+  background: rgba(245, 158, 11, 0.11);
+  color: #f59e0b;
+}
+
+.account-confirmation-modal__icon--success {
+  border: 1px solid rgba(34, 197, 94, 0.22);
+  background: rgba(34, 197, 94, 0.11);
+  color: #22c55e;
+}
+
+.account-confirmation-modal__close {
+  display: flex;
+  height: 2.55rem;
+  width: 2.55rem;
+  align-items: center;
+  justify-content: center;
+  border-radius: 1rem;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  background: rgba(255, 255, 255, 0.055);
+  color: #ffffff;
+  transition:
+    background 0.18s ease,
+    color 0.18s ease;
+}
+
+.account-confirmation-modal__close:hover {
+  background: #ffffff;
+  color: #020617;
+}
+
+.account-confirmation-modal__card h3 {
+  margin-top: 1.25rem;
+  color: #ffffff;
+  font-size: 1.35rem;
+  font-weight: 950;
+  letter-spacing: -0.045em;
+}
+
+.account-confirmation-modal__card p {
+  margin-top: 0.55rem;
+  color: rgba(255, 255, 255, 0.58);
+  font-size: 0.9rem;
+  line-height: 1.65;
+}
+
+.account-confirmation-modal__card p strong {
+  color: #ffffff;
+}
+
+.account-confirmation-modal__actions {
+  margin-top: 1.5rem;
+  display: flex;
+  gap: 0.75rem;
+}
+
+.account-confirmation-modal__cancel,
+.account-confirmation-modal__confirm {
+  display: inline-flex;
+  min-height: 3rem;
+  flex: 1;
+  align-items: center;
+  justify-content: center;
+  gap: 0.45rem;
+  border-radius: 1rem;
+  padding: 0.75rem 1rem;
+  font-size: 0.86rem;
+  font-weight: 950;
+  transition:
+    transform 0.18s ease,
+    background 0.18s ease,
+    color 0.18s ease;
+}
+
+.account-confirmation-modal__cancel:active,
+.account-confirmation-modal__confirm:active {
+  transform: scale(0.97);
+}
+
+.account-confirmation-modal__cancel {
+  border: 1px solid rgba(255, 255, 255, 0.11);
+  background: rgba(255, 255, 255, 0.065);
+  color: rgba(255, 255, 255, 0.84);
+}
+
+.account-confirmation-modal__cancel:hover {
+  background: #ffffff;
+  color: #020617;
+}
+
+.account-confirmation-modal__confirm--warning {
+  border: 1px solid rgba(245, 158, 11, 0.34);
+  background: #f59e0b;
+  color: #020617;
+}
+
+.account-confirmation-modal__confirm--warning:hover {
+  background: #fbbf24;
+}
+
+.account-confirmation-modal__confirm--success {
+  border: 1px solid rgba(34, 197, 94, 0.34);
+  background: #22c55e;
+  color: #020617;
+}
+
+.account-confirmation-modal__confirm--success:hover {
+  background: #4ade80;
+}
+
+@media (max-width: 900px) {
+  .mobile-account-card__action .account-toggle-button {
+    width: 100%;
+    min-height: 3rem;
+    border-radius: 1.1rem;
+    font-size: 0.82rem;
+  }
+
+  .account-toggle-button__desktop-label {
+    display: none;
+  }
+
+  .account-toggle-button__mobile-label {
+    display: inline;
+  }
+
+  .account-confirmation-modal {
+    align-items: flex-end;
+    padding: 0;
+  }
+
+  .account-confirmation-modal__card {
+    width: 100%;
+    max-width: none;
+    border-right: 0;
+    border-bottom: 0;
+    border-left: 0;
+    border-radius: 2rem 2rem 0 0;
+    padding: 1.25rem 1.1rem calc(1.35rem + env(safe-area-inset-bottom));
+  }
+
+  .account-confirmation-modal__card h3 {
+    font-size: 1.45rem;
+  }
+
+  .account-confirmation-modal__actions {
+    gap: 0.65rem;
+  }
+
+  .account-confirmation-modal__cancel,
+  .account-confirmation-modal__confirm {
+    min-height: 3.1rem;
+    border-radius: 1.1rem;
+  }
+}

@@ -56,7 +56,7 @@ export async function getAccountsPageData() {
       name: account.name,
       type: account.type,
       initialBalance: formatCurrency(Number(account.initialBalance)),
-    currentBalance: formatCurrency(Number(account.currentBalance)),
+      currentBalance: formatCurrency(Number(account.currentBalance)),
       rawInitialBalance: Number(account.initialBalance),
       rawCurrentBalance: Number(account.currentBalance),
       active: account.active,
