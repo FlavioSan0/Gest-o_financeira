@@ -1,10 +1,10 @@
 import { AppShell } from "@/components/layout/AppShell";
-import { CategoriesList } from "@/components/categories/CategoriesList";
-import { CategoryForm } from "@/components/categories/CategoryForm";
-import { getCategoriesPageData } from "@/services/categories-service";
+import { RecurringBillForm } from "@/components/recurring-bills/RecurringBillForm";
+import { RecurringBillsList } from "@/components/recurring-bills/RecurringBillsList";
+import { getRecurringBillsPageData } from "@/services/recurring-bills-service";
 
-export default async function CategoriesPage() {
-  const data = await getCategoriesPageData();
+export default async function RecurringBillsPage() {
+  const data = await getRecurringBillsPageData();
 
   return (
     <AppShell>
@@ -14,25 +14,28 @@ export default async function CategoriesPage() {
             <div className="flex flex-col justify-between gap-4 md:flex-row md:items-center">
               <div>
                 <p className="text-sm font-medium app-faint-text">
-                  Organização financeira
+                  Planejamento financeiro
                 </p>
 
                 <h2 className="mt-1 text-3xl font-black tracking-[-0.04em] text-white">
-                  Categorias
+                  Contas fixas
                 </h2>
 
                 <p className="mt-2 text-sm app-muted-text">
-                  Cadastre e organize categorias para entradas e saídas.
+                  Cadastre despesas recorrentes e gere lançamentos mensais com
+                  controle.
                 </p>
               </div>
             </div>
 
             <div className="grid gap-6 xl:grid-cols-[0.72fr_1.28fr]">
-              <CategoryForm familyId={data.familyId} />
-
-              <CategoriesList
+              <RecurringBillForm
                 familyId={data.familyId}
                 categories={data.categories}
+              />
+
+              <RecurringBillsList
+                recurringBills={data.recurringBills}
                 summary={data.summary}
               />
             </div>
@@ -40,12 +43,12 @@ export default async function CategoriesPage() {
         </div>
 
         <div className="mobile-only">
-          <div className="mobile-categories-page">
-            <header className="mobile-categories-hero">
+          <div className="mobile-recurring-page">
+            <header className="mobile-recurring-hero">
               <div>
-                <p className="mobile-eyebrow">Organização financeira</p>
+                <p className="mobile-eyebrow">Planejamento financeiro</p>
 
-                <h2>Categorias</h2>
+                <h2>Contas fixas</h2>
 
                 <span>
                   {data.summary.active} ativas • {data.summary.inactive}{" "}
@@ -54,9 +57,13 @@ export default async function CategoriesPage() {
               </div>
             </header>
 
-            <CategoriesList
+            <RecurringBillForm
               familyId={data.familyId}
               categories={data.categories}
+            />
+
+            <RecurringBillsList
+              recurringBills={data.recurringBills}
               summary={data.summary}
             />
           </div>

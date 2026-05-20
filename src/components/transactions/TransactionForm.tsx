@@ -21,11 +21,14 @@ type CreditCardOption = {
   dueDay: number;
 };
 
+type TransactionType = "INCOME" | "EXPENSE";
+
 type TransactionFormProps = {
   familyId: string;
   accounts: AccountOption[];
   categories: CategoryOption[];
   creditCards: CreditCardOption[];
+  defaultType?: TransactionType;
 };
 
 export function TransactionForm(props: TransactionFormProps) {

@@ -1,0 +1,272 @@
+/* =========================================================
+   MOBILE RECURRING BILLS STRUCTURE
+========================================================= */
+
+@media (max-width: 900px) {
+  .mobile-recurring-page {
+    display: grid;
+    gap: 18px;
+    padding-bottom: 10px;
+  }
+
+  .mobile-recurring {
+    display: grid;
+    gap: 18px;
+  }
+
+  .mobile-recurring-hero {
+    position: relative;
+    display: grid;
+    overflow: hidden;
+    border-radius: 30px;
+    border: 1px solid rgba(255, 255, 255, 0.08);
+    background:
+      radial-gradient(circle at top right, rgba(255, 255, 255, 0.07), transparent 9rem),
+      linear-gradient(180deg, rgba(255, 255, 255, 0.07), rgba(255, 255, 255, 0.026)),
+      rgba(8, 13, 27, 0.84);
+    padding: 18px;
+  }
+
+  .mobile-recurring-hero h2 {
+    margin-top: 0.2rem;
+    color: #ffffff;
+    font-size: 2rem;
+    font-weight: 950;
+    line-height: 0.95;
+    letter-spacing: -0.07em;
+  }
+
+  .mobile-recurring-hero span {
+    margin-top: 0.65rem;
+    display: inline-flex;
+    width: fit-content;
+    border-radius: 999px;
+    background: rgba(255, 255, 255, 0.06);
+    padding: 0.4rem 0.65rem;
+    color: rgba(255, 255, 255, 0.54);
+    font-size: 0.72rem;
+    font-weight: 850;
+  }
+
+  .mobile-recurring-summary {
+    display: grid;
+    gap: 16px;
+    border-radius: 30px;
+    background:
+      radial-gradient(circle at top right, rgba(255, 255, 255, 0.16), transparent 9rem),
+      linear-gradient(180deg, rgba(255, 255, 255, 1), rgba(235, 238, 244, 0.96));
+    color: #020617;
+    padding: 18px;
+  }
+
+  .mobile-recurring-summary__top {
+    display: flex;
+    justify-content: space-between;
+    gap: 16px;
+  }
+
+  .mobile-recurring-summary__top span {
+    color: rgba(2, 6, 23, 0.52);
+    font-size: 0.78rem;
+    font-weight: 850;
+  }
+
+  .mobile-recurring-summary__top strong {
+    margin-top: 0.35rem;
+    display: block;
+    font-size: clamp(1.9rem, 8vw, 2.5rem);
+    font-weight: 950;
+    line-height: 0.95;
+    letter-spacing: -0.075em;
+  }
+
+  .mobile-recurring-summary__icon {
+    display: flex;
+    height: 46px;
+    width: 46px;
+    align-items: center;
+    justify-content: center;
+    border-radius: 18px;
+    background: #020617;
+    color: #ffffff;
+  }
+
+  .mobile-recurring-summary__grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 10px;
+  }
+
+  .mobile-recurring-summary__grid div {
+    border-radius: 20px;
+    background: rgba(2, 6, 23, 0.06);
+    padding: 12px;
+  }
+
+  .mobile-recurring-summary__grid span {
+    display: block;
+    color: rgba(2, 6, 23, 0.48);
+    font-size: 0.72rem;
+    font-weight: 800;
+  }
+
+  .mobile-recurring-summary__grid b {
+    margin-top: 0.28rem;
+    display: block;
+    font-size: 0.92rem;
+    font-weight: 950;
+  }
+
+  .mobile-recurring-counter {
+    display: inline-flex;
+    height: 30px;
+    min-width: 30px;
+    align-items: center;
+    justify-content: center;
+    border-radius: 999px;
+    background: rgba(255, 255, 255, 0.075);
+    color: rgba(255, 255, 255, 0.68);
+    font-size: 0.78rem;
+    font-weight: 950;
+  }
+
+  .mobile-recurring-list {
+    display: grid;
+    gap: 12px;
+  }
+
+  .mobile-recurring-card {
+    display: grid;
+    gap: 14px;
+    overflow: hidden;
+    border-radius: 26px;
+    border: 1px solid rgba(255, 255, 255, 0.085);
+    background:
+      linear-gradient(180deg, rgba(255, 255, 255, 0.06), rgba(255, 255, 255, 0.024)),
+      rgba(8, 13, 27, 0.78);
+    padding: 15px;
+  }
+
+  .mobile-recurring-card--inactive {
+    opacity: 0.62;
+  }
+
+  .mobile-recurring-card__top {
+    display: grid;
+    grid-template-columns: auto minmax(0, 1fr);
+    align-items: center;
+    gap: 12px;
+  }
+
+  .mobile-recurring-card__icon {
+    display: flex;
+    height: 44px;
+    width: 44px;
+    align-items: center;
+    justify-content: center;
+    border-radius: 17px;
+    background: rgba(255, 255, 255, 0.09);
+    color: #ffffff;
+  }
+
+  .mobile-recurring-card__title {
+    min-width: 0;
+  }
+
+  .mobile-recurring-card__title strong {
+    display: block;
+    overflow: hidden;
+    color: #ffffff;
+    font-size: 0.96rem;
+    font-weight: 950;
+    letter-spacing: -0.035em;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+
+  .mobile-recurring-card__title span {
+    margin-top: 0.18rem;
+    display: block;
+    color: rgba(255, 255, 255, 0.46);
+    font-size: 0.72rem;
+    font-weight: 750;
+  }
+
+  .mobile-recurring-card__amount span {
+    color: rgba(255, 255, 255, 0.46);
+    font-size: 0.72rem;
+    font-weight: 800;
+  }
+
+  .mobile-recurring-card__amount strong {
+    display: block;
+    margin-top: 0.25rem;
+    color: #ef4444;
+    font-size: 1.45rem;
+    font-weight: 950;
+    letter-spacing: -0.06em;
+  }
+
+  .mobile-recurring-card__meta {
+    display: grid;
+    gap: 6px;
+    border-radius: 18px;
+    background: rgba(0, 0, 0, 0.22);
+    padding: 11px 12px;
+  }
+
+  .mobile-recurring-card__meta span {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    color: rgba(255, 255, 255, 0.54);
+    font-size: 0.74rem;
+    font-weight: 800;
+  }
+
+  .mobile-recurring-card__meta b {
+    color: #ffffff;
+    font-size: 0.84rem;
+    font-weight: 950;
+  }
+
+  .mobile-recurring-card__badges {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 6px;
+  }
+
+  .mobile-recurring-card__badge {
+    border-radius: 999px;
+    background: rgba(255, 255, 255, 0.055);
+    padding: 0.32rem 0.52rem;
+    color: rgba(255, 255, 255, 0.5);
+    font-size: 0.68rem;
+    font-weight: 900;
+  }
+
+  .mobile-recurring-card__badge--success {
+    background: rgba(34, 197, 94, 0.12);
+    color: #22c55e;
+  }
+
+  .mobile-recurring-card__actions {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 8px;
+  }
+
+  .mobile-recurring-card__actions button {
+    width: 100%;
+    min-height: 46px;
+    border-radius: 18px !important;
+    font-size: 0.78rem;
+  }
+}
+
+@media (max-width: 380px) {
+  .mobile-recurring-summary__grid,
+  .mobile-recurring-card__actions {
+    grid-template-columns: 1fr;
+  }
+}

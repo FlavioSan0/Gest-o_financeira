@@ -2,7 +2,7 @@
 
 import { useMemo, useState } from "react";
 import Link from "next/link";
-import { ArrowLeft, Save } from "lucide-react";
+import { ArrowLeft, Repeat, Save } from "lucide-react";
 import { createTransactionAction } from "@/actions/transactions-actions";
 
 type AccountOption = {
@@ -36,6 +36,14 @@ type PaymentMethod =
   | "BOLETO"
   | "OTHER";
 
+type RepeatMode =
+  | "NONE"
+  | "INSTALLMENT"
+  | "FIXED_MONTHS"
+  | "PROJECT_12_MONTHS";
+
+type AmountMode = "PER_INSTALLMENT" | "TOTAL";
+
 type TransactionFormDesktopProps = {
   familyId: string;
   accounts: AccountOption[];
@@ -55,11 +63,16 @@ export function TransactionFormDesktop({
     useState<TransactionType>(defaultType);
 
   const [paymentMethod, setPaymentMethod] = useState<PaymentMethod>("PIX");
+  const [repeatMode, setRepeatMode] = useState<RepeatMode>("NONE");
+  const [amountMode, setAmountMode] = useState<AmountMode>("PER_INSTALLMENT");
 
   const today = new Date().toISOString().slice(0, 10);
   const isIncome = transactionType === "INCOME";
   const isExpense = transactionType === "EXPENSE";
   const isCreditCardPayment = isExpense && paymentMethod === "CREDIT_CARD";
+  const showRepeatOptions = isExpense;
+  const showQuantityField =
+    repeatMode === "INSTALLMENT" || repeatMode === "FIXED_MONTHS";
 
   const filteredCategories = useMemo(() => {
     return categories.filter((category) => category.type === transactionType);
@@ -85,8 +98,19 @@ export function TransactionFormDesktop({
   function handleTypeChange(type: TransactionType) {
     setTransactionType(type);
 
-    if (type === "INCOME" && paymentMethod === "CREDIT_CARD") {
+    if (type === "INCOME") {
       setPaymentMethod("PIX");
+      setRepeatMode("NONE");
+      setAmountMode("PER_INSTALLMENT");
+    }
+  }
+
+  function handlePaymentMethodChange(method: PaymentMethod) {
+    setPaymentMethod(method);
+
+    if (method === "CREDIT_CARD") {
+      setRepeatMode("INSTALLMENT");
+      setAmountMode("TOTAL");
     }
   }
 
@@ -216,10 +240,30 @@ export function TransactionFormDesktop({
               />
             </div>
 
+            <div>
+              
+            <label className="mb-2 block text-sm font-bold text-white">
+              Data de vencimento
+            </label>
+
+            <input
+              required
+              type="date"
+              name="dueDate"
+              defaultValue={today}
+              className="finance-input"
+            />
+
+            <p className="mt-2 text-xs app-faint-text">
+              Em parcelas ou contas fixas, os próximos vencimentos serão gerados a partir
+              desta data.
+            </p>
+          </div>
+
             {isExpense && (
               <div>
                 <label className="mb-2 block text-sm font-bold text-white">
-                  Status
+                  Status do primeiro lançamento
                 </label>
 
                 <select
@@ -231,6 +275,13 @@ export function TransactionFormDesktop({
                   <option value="PENDING">Pendente</option>
                   <option value="OVERDUE">Atrasado</option>
                 </select>
+
+                {repeatMode !== "NONE" && (
+                  <p className="mt-2 text-xs text-amber-300">
+                    Em lançamentos repetidos, os próximos meses serão criados
+                    como pendentes para não alterar seu saldo futuro.
+                  </p>
+                )}
               </div>
             )}
 
@@ -302,7 +353,7 @@ export function TransactionFormDesktop({
                 name="paymentMethod"
                 value={paymentMethod}
                 onChange={(event) =>
-                  setPaymentMethod(event.target.value as PaymentMethod)
+                  handlePaymentMethodChange(event.target.value as PaymentMethod)
                 }
                 className="finance-input"
               >
@@ -314,6 +365,128 @@ export function TransactionFormDesktop({
               </select>
             </div>
           </div>
+
+          {showRepeatOptions && (
+            <section className="rounded-[1.75rem] border border-white/10 bg-black/20 p-5">
+              <div className="flex items-start gap-3">
+                <div className="app-icon-box h-11 w-11">
+                  <Repeat className="h-5 w-5" />
+                </div>
+
+                <div>
+                  <h3 className="text-lg font-black tracking-[-0.03em] text-white">
+                    Repetição da despesa
+                  </h3>
+
+                  <p className="mt-1 text-sm app-faint-text">
+                    Use para compras parceladas, aluguel por alguns meses,
+                    assinatura ou conta fixa.
+                  </p>
+                </div>
+              </div>
+
+              <div className="mt-5 grid gap-5">
+                <div>
+                  <label className="mb-2 block text-sm font-bold text-white">
+                    Como deseja lançar?
+                  </label>
+
+                  <select
+                    name="repeatMode"
+                    value={repeatMode}
+                    onChange={(event) => {
+                      const value = event.target.value as RepeatMode;
+                      setRepeatMode(value);
+
+                      if (value === "NONE") {
+                        setAmountMode("PER_INSTALLMENT");
+                      }
+
+                      if (value === "INSTALLMENT") {
+                        setAmountMode("TOTAL");
+                      }
+                    }}
+                    className="finance-input"
+                  >
+                    <option value="NONE">Não repetir</option>
+                    <option value="INSTALLMENT">Parcelar compra</option>
+                    <option value="FIXED_MONTHS">
+                      Repetir por alguns meses
+                    </option>
+                    <option value="PROJECT_12_MONTHS">
+                      Recorrente sem prazo definido — projetar 12 meses
+                    </option>
+                  </select>
+                </div>
+
+                {repeatMode !== "NONE" && (
+                  <div className="grid gap-5 md:grid-cols-2">
+                    {showQuantityField && (
+                      <div>
+                        <label className="mb-2 block text-sm font-bold text-white">
+                          {repeatMode === "INSTALLMENT"
+                            ? "Quantidade de parcelas"
+                            : "Quantidade de meses"}
+                        </label>
+
+                        <input
+                          required
+                          name="repeatQuantity"
+                          type="number"
+                          min={2}
+                          max={120}
+                          defaultValue={
+                            repeatMode === "INSTALLMENT" ? 2 : 12
+                          }
+                          className="finance-input"
+                        />
+                      </div>
+                    )}
+
+                    {repeatMode === "PROJECT_12_MONTHS" && (
+                      <input type="hidden" name="repeatQuantity" value="12" />
+                    )}
+
+                    <div>
+                      <label className="mb-2 block text-sm font-bold text-white">
+                        Como interpretar o valor?
+                      </label>
+
+                      <select
+                        name="amountMode"
+                        value={amountMode}
+                        onChange={(event) =>
+                          setAmountMode(event.target.value as AmountMode)
+                        }
+                        className="finance-input"
+                      >
+                        <option value="PER_INSTALLMENT">
+                          Valor de cada mês/parcela
+                        </option>
+
+                        <option value="TOTAL">
+                          Valor total para dividir
+                        </option>
+                      </select>
+                    </div>
+                  </div>
+                )}
+
+                {repeatMode !== "NONE" && (
+                  <div className="rounded-3xl border border-white/10 bg-white/5 p-4 text-sm leading-6 app-muted-text">
+                    {repeatMode === "INSTALLMENT" &&
+                      "Exemplo: compra de R$ 1.200 em 6x. Se escolher valor total, o sistema divide automaticamente."}
+
+                    {repeatMode === "FIXED_MONTHS" &&
+                      "Exemplo: aluguel por 12 meses. Se escolher valor de cada mês, o mesmo valor será lançado mensalmente."}
+
+                    {repeatMode === "PROJECT_12_MONTHS" &&
+                      "Exemplo: internet ou assinatura sem prazo final. O sistema criará uma projeção dos próximos 12 meses."}
+                  </div>
+                )}
+              </div>
+            </section>
+          )}
 
           <div>
             <label className="mb-2 block text-sm font-bold text-white">

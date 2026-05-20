@@ -1,11 +1,14 @@
+import Link from "next/link";
 import {
   ArrowDownCircle,
   ArrowUpCircle,
   CircleDot,
   Layers3,
+  Pencil,
   Tags,
 } from "lucide-react";
 import { ToggleCategoryButton } from "@/components/categories/ToggleCategoryButton";
+import { MobileCategoryCreatePanel } from "@/components/categories/mobile/MobileCategoryCreatePanel";
 
 type CategoryItem = {
   id: string;
@@ -17,6 +20,7 @@ type CategoryItem = {
 };
 
 type CategoriesListMobileProps = {
+  familyId: string;
   categories: CategoryItem[];
   summary: {
     total: number;
@@ -38,13 +42,16 @@ function getTypeClassName(type: CategoryItem["type"]) {
 }
 
 export function CategoriesListMobile({
+  familyId,
   categories,
   summary,
 }: CategoriesListMobileProps) {
   const hasCategories = categories.length > 0;
+
   const incomeCategories = categories.filter(
     (category) => category.type === "INCOME",
   );
+
   const expenseCategories = categories.filter(
     (category) => category.type === "EXPENSE",
   );
@@ -75,6 +82,8 @@ export function CategoriesListMobile({
           </div>
         </div>
       </section>
+
+      <MobileCategoryCreatePanel familyId={familyId} />
 
       <section className="mobile-categories-stats">
         <article>
@@ -144,19 +153,29 @@ export function CategoriesListMobile({
                       <strong>{category.name}</strong>
                       <span>Ícone: {category.icon || "Não definido"}</span>
                     </div>
+                  </div>
 
+                  <div className="mobile-category-card__badges">
                     <span className={getTypeClassName(category.type)}>
                       {getTypeLabel(category.type)}
                     </span>
+
+                    {!category.active && (
+                      <span className="mobile-category-card__status">
+                        Inativa
+                      </span>
+                    )}
                   </div>
 
-                  {!category.active && (
-                    <span className="mobile-category-card__status">
-                      Inativa
-                    </span>
-                  )}
+                  <div className="mobile-category-card__actions">
+                    <Link
+                      href={`/categorias/${category.id}/editar`}
+                      className="mobile-category-card__edit"
+                    >
+                      <Pencil className="h-4 w-4" />
+                      Editar
+                    </Link>
 
-                  <div className="mobile-category-card__action">
                     <ToggleCategoryButton
                       categoryId={category.id}
                       categoryName={category.name}
@@ -207,19 +226,29 @@ export function CategoriesListMobile({
                       <strong>{category.name}</strong>
                       <span>Ícone: {category.icon || "Não definido"}</span>
                     </div>
+                  </div>
 
+                  <div className="mobile-category-card__badges">
                     <span className={getTypeClassName(category.type)}>
                       {getTypeLabel(category.type)}
                     </span>
+
+                    {!category.active && (
+                      <span className="mobile-category-card__status">
+                        Inativa
+                      </span>
+                    )}
                   </div>
 
-                  {!category.active && (
-                    <span className="mobile-category-card__status">
-                      Inativa
-                    </span>
-                  )}
+                  <div className="mobile-category-card__actions">
+                    <Link
+                      href={`/categorias/${category.id}/editar`}
+                      className="mobile-category-card__edit"
+                    >
+                      <Pencil className="h-4 w-4" />
+                      Editar
+                    </Link>
 
-                  <div className="mobile-category-card__action">
                     <ToggleCategoryButton
                       categoryId={category.id}
                       categoryName={category.name}

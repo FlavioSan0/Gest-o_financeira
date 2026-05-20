@@ -1,3 +1,6 @@
+"use client";
+
+import { useState } from "react";
 import Link from "next/link";
 import {
   ArrowDownCircle,
@@ -48,6 +51,7 @@ type TransactionEditData = {
   description: string;
   amount: string;
   transactionDate: string;
+  dueDate: string;
   status: "PAID" | "PENDING" | "OVERDUE" | "CANCELED";
   paymentMethod: PaymentMethod;
   notes: string;
@@ -65,11 +69,18 @@ export function TransactionEditFormMobile({
   transaction,
   accounts,
   categories,
+  creditCards,
   defaultType,
 }: TransactionEditFormMobileProps) {
   const transactionType = defaultType ?? transaction.type;
   const isIncome = transactionType === "INCOME";
   const isExpense = transactionType === "EXPENSE";
+
+  const [paymentMethod, setPaymentMethod] = useState<PaymentMethod>(
+    isIncome && transaction.paymentMethod === "CREDIT_CARD"
+      ? "PIX"
+      : transaction.paymentMethod,
+  );
 
   const filteredCategories = categories.filter(
     (category) => category.type === transactionType,
@@ -78,6 +89,12 @@ export function TransactionEditFormMobile({
   const currentCategoryIsCompatible = filteredCategories.some(
     (category) => category.id === transaction.categoryId,
   );
+
+  const isCreditCardPayment = isExpense && paymentMethod === "CREDIT_CARD";
+
+  function handlePaymentMethodChange(method: PaymentMethod) {
+    setPaymentMethod(method);
+  }
 
   const paymentOptions: { value: PaymentMethod; label: string }[] = isIncome
     ? [
@@ -95,11 +112,6 @@ export function TransactionEditFormMobile({
         { value: "BOLETO", label: "Boleto" },
         { value: "OTHER", label: "Outro" },
       ];
-
-  const paymentMethodDefault =
-    isIncome && transaction.paymentMethod === "CREDIT_CARD"
-      ? "PIX"
-      : transaction.paymentMethod;
 
   return (
     <form action={updateTransactionAction} className="mobile-transaction-form">
@@ -201,7 +213,7 @@ export function TransactionEditFormMobile({
 
         <div className="mobile-form-group">
           <label className="mobile-form-label">
-            {isIncome ? "Data de recebimento" : "Data"}
+            {isIncome ? "Data de recebimento" : "Data do lançamento"}
           </label>
 
           <input
@@ -212,6 +224,20 @@ export function TransactionEditFormMobile({
             className="finance-input"
           />
         </div>
+
+        {isExpense && (
+          <div className="mobile-form-group">
+            <label className="mobile-form-label">Data de vencimento</label>
+
+            <input
+              required
+              type="date"
+              name="dueDate"
+              defaultValue={transaction.dueDate || transaction.transactionDate}
+              className="finance-input"
+            />
+          </div>
+        )}
 
         {isExpense && (
           <div className="mobile-form-group">
@@ -232,25 +258,27 @@ export function TransactionEditFormMobile({
       </section>
 
       <section className="mobile-form-card">
-        <div className="mobile-form-group">
-          <label className="mobile-form-label">
-            {isIncome ? "Conta de destino" : "Conta"}
-          </label>
+        {!isCreditCardPayment && (
+          <div className="mobile-form-group">
+            <label className="mobile-form-label">
+              {isIncome ? "Conta de destino" : "Conta"}
+            </label>
 
-          <select
-            name="accountId"
-            defaultValue={transaction.accountId}
-            className="finance-input"
-          >
-            <option value="">{isIncome ? "Selecionar conta" : "Sem conta"}</option>
+            <select
+              name="accountId"
+              defaultValue={transaction.accountId}
+              className="finance-input"
+            >
+              <option value="">{isIncome ? "Selecionar conta" : "Sem conta"}</option>
 
-            {accounts.map((account) => (
-              <option key={account.id} value={account.id}>
-                {account.name}
-              </option>
-            ))}
-          </select>
-        </div>
+              {accounts.map((account) => (
+                <option key={account.id} value={account.id}>
+                  {account.name}
+                </option>
+              ))}
+            </select>
+          </div>
+        )}
 
         <div className="mobile-form-group">
           <label className="mobile-form-label">Categoria</label>
@@ -286,7 +314,10 @@ export function TransactionEditFormMobile({
 
           <select
             name="paymentMethod"
-            defaultValue={paymentMethodDefault}
+            value={paymentMethod}
+            onChange={(event) =>
+              handlePaymentMethodChange(event.target.value as PaymentMethod)
+            }
             className="finance-input"
           >
             {paymentOptions.map((option) => (
@@ -297,6 +328,34 @@ export function TransactionEditFormMobile({
           </select>
         </div>
       </section>
+
+      {isCreditCardPayment && (
+        <section className="mobile-form-card">
+          <div className="mobile-form-group">
+            <label className="mobile-form-label">Cartão de crédito</label>
+
+            <select
+              required
+              name="creditCardId"
+              defaultValue={transaction.creditCardId}
+              className="finance-input"
+            >
+              <option value="">Selecione um cartão</option>
+
+              {creditCards.map((card) => (
+                <option key={card.id} value={card.id}>
+                  {card.name} • {card.bank}
+                </option>
+              ))}
+            </select>
+          </div>
+
+          <p className="mobile-form-helper">
+            Compras no crédito não alteram o saldo da conta agora. Elas serão
+            usadas para controle de fatura.
+          </p>
+        </section>
+      )}
 
       <section className="mobile-form-card">
         <label className="mobile-form-label">Observações</label>

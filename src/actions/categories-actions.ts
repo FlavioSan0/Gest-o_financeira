@@ -1,6 +1,7 @@
 "use server";
 
 import { revalidatePath } from "next/cache";
+import { redirect } from "next/navigation";
 import { prisma } from "@/lib/prisma";
 
 function getRequiredValue(formData: FormData, field: string) {
@@ -23,10 +24,25 @@ function getOptionalValue(formData: FormData, field: string) {
   return value.trim();
 }
 
+function getCategoryType(value: string) {
+  if (value !== "INCOME" && value !== "EXPENSE") {
+    throw new Error("Tipo de categoria inválido.");
+  }
+
+  return value;
+}
+
+function revalidateCategoriesDependencies() {
+  revalidatePath("/");
+  revalidatePath("/categorias");
+  revalidatePath("/lancamentos");
+  revalidatePath("/lancamentos/novo");
+}
+
 export async function createCategoryAction(formData: FormData) {
   const familyId = getRequiredValue(formData, "familyId");
   const name = getRequiredValue(formData, "name");
-  const type = getRequiredValue(formData, "type") as "INCOME" | "EXPENSE";
+  const type = getCategoryType(getRequiredValue(formData, "type"));
   const color = getOptionalValue(formData, "color");
   const icon = getOptionalValue(formData, "icon");
 
@@ -62,25 +78,83 @@ export async function createCategoryAction(formData: FormData) {
     });
   }
 
-  revalidatePath("/categorias");
-  revalidatePath("/lancamentos/novo");
-  revalidatePath("/lancamentos");
+  revalidateCategoriesDependencies();
+  redirect("/categorias");
 }
 
-export async function toggleCategoryStatusAction(formData: FormData) {
+export async function updateCategoryAction(formData: FormData) {
   const categoryId = getRequiredValue(formData, "categoryId");
-  const currentStatus = getRequiredValue(formData, "currentStatus");
+  const name = getRequiredValue(formData, "name");
+  const type = getCategoryType(getRequiredValue(formData, "type"));
+  const color = getOptionalValue(formData, "color");
+  const icon = getOptionalValue(formData, "icon");
 
-  await prisma.category.update({
+  const category = await prisma.category.findUnique({
     where: {
       id: categoryId,
     },
-    data: {
-      active: currentStatus !== "true",
+    select: {
+      id: true,
     },
   });
 
-  revalidatePath("/categorias");
-  revalidatePath("/lancamentos/novo");
-  revalidatePath("/lancamentos");
+  if (!category) {
+    throw new Error("Categoria não encontrada.");
+  }
+
+  await prisma.category.update({
+    where: {
+      id: category.id,
+    },
+    data: {
+      name,
+      type,
+      color,
+      icon,
+    },
+  });
+
+  revalidateCategoriesDependencies();
+  redirect("/categorias");
+}
+
+export async function toggleCategoryStatusAction(categoryId: string) {
+  if (!categoryId || categoryId.trim() === "") {
+    throw new Error("ID da categoria não informado.");
+  }
+
+  const category = await prisma.category.findUnique({
+    where: {
+      id: categoryId,
+    },
+    select: {
+      id: true,
+      active: true,
+    },
+  });
+
+  if (!category) {
+    throw new Error("Categoria não encontrada.");
+  }
+
+  const updatedCategory = await prisma.category.update({
+    where: {
+      id: category.id,
+    },
+    data: {
+      active: !category.active,
+    },
+    select: {
+      id: true,
+      active: true,
+    },
+  });
+
+  revalidateCategoriesDependencies();
+
+  return {
+    success: true,
+    categoryId: updatedCategory.id,
+    active: updatedCategory.active,
+  };
 }

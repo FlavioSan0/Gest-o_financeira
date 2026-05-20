@@ -203,15 +203,19 @@ export async function getTransactionsList(filters: TransactionsFilters = {}) {
     }),
   ]);
 
-  const totalIncome = transactions
-    .filter((transaction) => transaction.type === "INCOME")
-    .reduce((acc, transaction) => acc + Number(transaction.amount), 0);
+  const paidTransactions = transactions.filter(
+  (transaction) => transaction.status === "PAID",
+);
 
-  const totalExpense = transactions
-    .filter((transaction) => transaction.type === "EXPENSE")
-    .reduce((acc, transaction) => acc + Number(transaction.amount), 0);
+const totalIncome = paidTransactions
+  .filter((transaction) => transaction.type === "INCOME")
+  .reduce((acc, transaction) => acc + Number(transaction.amount), 0);
 
-  const balance = totalIncome - totalExpense;
+const totalExpense = paidTransactions
+  .filter((transaction) => transaction.type === "EXPENSE")
+  .reduce((acc, transaction) => acc + Number(transaction.amount), 0);
+
+const balance = totalIncome - totalExpense;
 
   const totalBaseIncome = summaryBaseTransactions
     .filter((transaction) => transaction.type === "INCOME")
@@ -329,6 +333,9 @@ export async function getTransactionForEdit(transactionId: string) {
       description: transaction.description,
       amount: Number(transaction.amount).toFixed(2).replace(".", ","),
       transactionDate: transaction.transactionDate.toISOString().slice(0, 10),
+      dueDate: transaction.dueDate
+        ? transaction.dueDate.toISOString().slice(0, 10)
+        : "",
       status: transaction.status,
       paymentMethod: transaction.paymentMethod,
       notes: transaction.notes ?? "",

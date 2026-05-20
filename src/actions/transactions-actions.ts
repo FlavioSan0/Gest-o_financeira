@@ -16,11 +16,35 @@ type PaymentMethod =
   | "BOLETO"
   | "OTHER";
 
+type RepeatMode =
+  | "NONE"
+  | "INSTALLMENT"
+  | "FIXED_MONTHS"
+  | "PROJECT_12_MONTHS";
+
+type AmountMode = "PER_INSTALLMENT" | "TOTAL";
+
 type AccountImpactInput = {
   accountId: string | null;
   type: TransactionType;
   status: TransactionStatus;
   amount: number;
+};
+
+type TransactionCreateInput = {
+  familyId: string;
+  userId: string;
+  accountId: string | null;
+  creditCardId: string | null;
+  categoryId: string | null;
+  type: TransactionType;
+  description: string;
+  amount: number;
+  transactionDate: Date;
+  dueDate: Date;
+  status: TransactionStatus;
+  paymentMethod: PaymentMethod;
+  notes: string | null;
 };
 
 function getRequiredValue(formData: FormData, field: string) {
@@ -56,6 +80,38 @@ function parseCurrencyValue(value: string) {
   }
 
   return numericValue;
+}
+
+function parsePositiveInteger(value: string | null, fallback: number) {
+  if (!value) return fallback;
+
+  const parsed = Number(value);
+
+  if (!Number.isInteger(parsed) || parsed <= 0) {
+    return fallback;
+  }
+
+  return parsed;
+}
+
+function getRepeatMode(value: string | null): RepeatMode {
+  if (
+    value === "INSTALLMENT" ||
+    value === "FIXED_MONTHS" ||
+    value === "PROJECT_12_MONTHS"
+  ) {
+    return value;
+  }
+
+  return "NONE";
+}
+
+function getAmountMode(value: string | null): AmountMode {
+  if (value === "TOTAL") {
+    return "TOTAL";
+  }
+
+  return "PER_INSTALLMENT";
 }
 
 function shouldAffectAccount(input: AccountImpactInput) {
@@ -112,9 +168,7 @@ async function validateAccountBelongsToFamily(
   accountId: string | null,
   familyId: string,
 ) {
-  if (!accountId) {
-    return;
-  }
+  if (!accountId) return;
 
   const account = await prisma.account.findFirst({
     where: {
@@ -133,9 +187,7 @@ async function validateCategoryBelongsToFamily(
   categoryId: string | null,
   familyId: string,
 ) {
-  if (!categoryId) {
-    return;
-  }
+  if (!categoryId) return;
 
   const category = await prisma.category.findFirst({
     where: {
@@ -154,9 +206,7 @@ async function validateCreditCardBelongsToFamily(
   creditCardId: string | null,
   familyId: string,
 ) {
-  if (!creditCardId) {
-    return;
-  }
+  if (!creditCardId) return;
 
   const creditCard = await prisma.creditCard.findFirst({
     where: {
@@ -180,6 +230,120 @@ function revalidateFinancialPages() {
   revalidatePath("/cartoes/faturas");
 }
 
+function createDateFromInput(value: string) {
+  return new Date(`${value}T12:00:00`);
+}
+
+function addMonths(baseDate: Date, monthsToAdd: number) {
+  const year = baseDate.getFullYear();
+  const month = baseDate.getMonth();
+  const day = baseDate.getDate();
+
+  const targetLastDay = new Date(year, month + monthsToAdd + 1, 0).getDate();
+  const safeDay = Math.min(day, targetLastDay);
+
+  return new Date(year, month + monthsToAdd, safeDay, 12, 0, 0);
+}
+
+function createRepetitionId() {
+  return `rep_${Date.now()}_${Math.random().toString(36).slice(2, 10)}`;
+}
+
+function buildNotesWithMetadata(
+  originalNotes: string | null,
+  metadata: string[],
+) {
+  const cleanNotes = originalNotes?.trim();
+
+  if (!cleanNotes) {
+    return metadata.join(";");
+  }
+
+  return `${cleanNotes}\n\n${metadata.join(";")}`;
+}
+
+function buildTransactions(input: {
+  familyId: string;
+  userId: string;
+  accountId: string | null;
+  creditCardId: string | null;
+  categoryId: string | null;
+  type: TransactionType;
+  description: string;
+  amount: number;
+  transactionDate: Date;
+  dueDate: Date;
+  status: TransactionStatus;
+  paymentMethod: PaymentMethod;
+  notes: string | null;
+  repeatMode: RepeatMode;
+  repeatQuantity: number;
+  amountMode: AmountMode;
+}): TransactionCreateInput[] {
+  if (input.type === "INCOME" || input.repeatMode === "NONE") {
+    return [
+      {
+        familyId: input.familyId,
+        userId: input.userId,
+        accountId: input.accountId,
+        creditCardId: input.creditCardId,
+        categoryId: input.categoryId,
+        type: input.type,
+        description: input.description,
+        amount: input.amount,
+        transactionDate: input.transactionDate,
+        dueDate: input.dueDate,
+        status: input.status,
+        paymentMethod: input.paymentMethod,
+        notes: input.notes,
+      },
+    ];
+  }
+
+  const quantity =
+    input.repeatMode === "PROJECT_12_MONTHS" ? 12 : input.repeatQuantity;
+
+  const safeQuantity = Math.min(Math.max(quantity, 1), 120);
+
+  const amountPerOccurrence =
+    input.amountMode === "TOTAL"
+      ? Number((input.amount / safeQuantity).toFixed(2))
+      : input.amount;
+
+  const repetitionId = createRepetitionId();
+
+  return Array.from({ length: safeQuantity }, (_, index) => {
+    const installmentNumber = index + 1;
+    const occurrenceDueDate = addMonths(input.dueDate, index);
+
+    const metadata = [
+      `REPETICAO_ID:${repetitionId}`,
+      `REPETICAO_TIPO:${input.repeatMode}`,
+      `PARCELA:${installmentNumber}/${safeQuantity}`,
+      `VALOR_MODO:${input.amountMode}`,
+    ];
+
+    const occurrenceStatus: TransactionStatus =
+      index === 0 ? input.status : "PENDING";
+
+    return {
+      familyId: input.familyId,
+      userId: input.userId,
+      accountId: input.accountId,
+      creditCardId: input.creditCardId,
+      categoryId: input.categoryId,
+      type: input.type,
+      description: `${input.description} ${installmentNumber}/${safeQuantity}`,
+      amount: amountPerOccurrence,
+      transactionDate: input.transactionDate,
+      dueDate: occurrenceDueDate,
+      status: occurrenceStatus,
+      paymentMethod: input.paymentMethod,
+      notes: buildNotesWithMetadata(input.notes, metadata),
+    };
+  });
+}
+
 export async function createTransactionAction(formData: FormData) {
   const session = await requireSession();
 
@@ -191,10 +355,13 @@ export async function createTransactionAction(formData: FormData) {
   const amount = parseCurrencyValue(getRequiredValue(formData, "amount"));
   const transactionDate = getRequiredValue(formData, "transactionDate");
 
+  const dueDateValue = getOptionalValue(formData, "dueDate") ?? transactionDate;
+
   const rawPaymentMethod = getOptionalValue(formData, "paymentMethod") ?? "PIX";
   const paymentMethod = rawPaymentMethod as PaymentMethod;
 
-  const isCreditCardPayment = paymentMethod === "CREDIT_CARD";
+  const isCreditCardPayment =
+    type === "EXPENSE" && paymentMethod === "CREDIT_CARD";
 
   const accountId = isCreditCardPayment
     ? null
@@ -210,46 +377,83 @@ export async function createTransactionAction(formData: FormData) {
   const status = (getOptionalValue(formData, "status") ??
     "PAID") as TransactionStatus;
 
+  const repeatMode = getRepeatMode(getOptionalValue(formData, "repeatMode"));
+  const repeatQuantity = parsePositiveInteger(
+    getOptionalValue(formData, "repeatQuantity"),
+    repeatMode === "PROJECT_12_MONTHS" ? 12 : 1,
+  );
+  const amountMode = getAmountMode(getOptionalValue(formData, "amountMode"));
+
   await prisma.$transaction(async () => {
     await validateAccountBelongsToFamily(accountId, familyId);
     await validateCategoryBelongsToFamily(categoryId, familyId);
     await validateCreditCardBelongsToFamily(creditCardId, familyId);
 
-    const createdTransaction = await prisma.transaction.create({
-      data: {
-        familyId,
-        accountId,
-        creditCardId,
-        categoryId,
-        userId,
-        type,
-        description,
-        amount,
-        transactionDate: new Date(`${transactionDate}T12:00:00`),
-        status,
-        paymentMethod,
-        notes,
-        paidAt: status === "PAID" ? new Date() : null,
-      },
+    const transactionsToCreate = buildTransactions({
+      familyId,
+      userId,
+      accountId,
+      creditCardId,
+      categoryId,
+      type,
+      description,
+      amount,
+      transactionDate: createDateFromInput(transactionDate),
+      dueDate: createDateFromInput(dueDateValue),
+      status,
+      paymentMethod,
+      notes,
+      repeatMode,
+      repeatQuantity,
+      amountMode,
     });
 
-    if (!createdTransaction.userId) {
+    const createdTransactions = await Promise.all(
+      transactionsToCreate.map((transaction) =>
+        prisma.transaction.create({
+          data: {
+            familyId: transaction.familyId,
+            accountId: transaction.accountId,
+            creditCardId: transaction.creditCardId,
+            categoryId: transaction.categoryId,
+            userId: transaction.userId,
+            type: transaction.type,
+            description: transaction.description,
+            amount: transaction.amount,
+            transactionDate: transaction.transactionDate,
+            dueDate: transaction.dueDate,
+            status: transaction.status,
+            paymentMethod: transaction.paymentMethod,
+            notes: transaction.notes,
+            paidAt: transaction.status === "PAID" ? new Date() : null,
+          },
+        }),
+      ),
+    );
+
+    const hasInvalidUserLink = createdTransactions.some(
+      (transaction) => !transaction.userId,
+    );
+
+    if (hasInvalidUserLink) {
       throw new Error("Falha ao vincular o lançamento ao usuário logado.");
     }
 
     if (!isCreditCardPayment) {
-      await applyAccountImpact({
-        accountId,
-        type,
-        status,
-        amount,
-      });
+      for (const transaction of transactionsToCreate) {
+        await applyAccountImpact({
+          accountId,
+          type: transaction.type,
+          status: transaction.status,
+          amount: transaction.amount,
+        });
+      }
     }
   });
 
   revalidateFinancialPages();
 
-  redirect("/");
+  redirect("/lancamentos");
 }
 
 export async function updateTransactionAction(formData: FormData) {
@@ -260,6 +464,7 @@ export async function updateTransactionAction(formData: FormData) {
   const description = getRequiredValue(formData, "description");
   const amount = parseCurrencyValue(getRequiredValue(formData, "amount"));
   const transactionDate = getRequiredValue(formData, "transactionDate");
+  const dueDateValue = getOptionalValue(formData, "dueDate") ?? transactionDate;
 
   const rawPaymentMethod = getOptionalValue(formData, "paymentMethod") ?? "PIX";
   const paymentMethod = rawPaymentMethod as PaymentMethod;
@@ -315,7 +520,8 @@ export async function updateTransactionAction(formData: FormData) {
         type,
         description,
         amount,
-        transactionDate: new Date(`${transactionDate}T12:00:00`),
+        transactionDate: createDateFromInput(transactionDate),
+        dueDate: createDateFromInput(dueDateValue),
         status,
         paymentMethod,
         notes,

@@ -11,6 +11,7 @@ type CategoryItem = {
 };
 
 type CategoriesListProps = {
+  familyId: string;
   categories: CategoryItem[];
   summary: {
     total: number;
@@ -25,11 +26,18 @@ export function CategoriesList(props: CategoriesListProps) {
   return (
     <>
       <div className="desktop-only">
-        <CategoriesListDesktop {...props} />
+        <CategoriesListDesktop
+          categories={props.categories}
+          summary={props.summary}
+        />
       </div>
 
       <div className="mobile-only">
-        <CategoriesListMobile {...props} />
+        <CategoriesListMobile
+          familyId={props.familyId}
+          categories={props.categories}
+          summary={props.summary}
+        />
       </div>
     </>
   );

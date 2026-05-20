@@ -1,8 +1,10 @@
+import Link from "next/link";
 import {
   ArrowDownCircle,
   ArrowUpCircle,
   CircleDot,
   Layers3,
+  Pencil,
   Tags,
 } from "lucide-react";
 import { ToggleCategoryButton } from "@/components/categories/ToggleCategoryButton";
@@ -188,11 +190,21 @@ export function CategoriesListDesktop({
                     </div>
                   </div>
 
-                  <ToggleCategoryButton
-                    categoryId={category.id}
-                    categoryName={category.name}
-                    active={category.active}
-                  />
+                  <div className="flex flex-wrap items-center gap-2">
+                    <Link
+                      href={`/categorias/${category.id}/editar`}
+                      className="inline-flex items-center justify-center gap-2 rounded-2xl border border-white/10 bg-white/5 px-4 py-2 text-xs font-black text-white transition hover:bg-white hover:text-black"
+                    >
+                      <Pencil className="h-4 w-4" />
+                      Editar
+                    </Link>
+
+                    <ToggleCategoryButton
+                      categoryId={category.id}
+                      categoryName={category.name}
+                      active={category.active}
+                    />
+                  </div>
                 </div>
               </article>
             ))}

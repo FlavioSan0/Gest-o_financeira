@@ -4,19 +4,19 @@ import { useEffect, useState, useTransition } from "react";
 import { createPortal } from "react-dom";
 import { useRouter } from "next/navigation";
 import { AlertTriangle, EyeOff, Loader2, Power, X } from "lucide-react";
-import { toggleCategoryStatusAction } from "@/actions/categories-actions";
+import { toggleRecurringBillStatusAction } from "@/actions/recurring-bills-actions";
 
-type ToggleCategoryButtonProps = {
-  categoryId: string;
-  categoryName: string;
+type ToggleRecurringBillButtonProps = {
+  recurringBillId: string;
+  recurringBillDescription: string;
   active: boolean;
 };
 
-export function ToggleCategoryButton({
-  categoryId,
-  categoryName,
+export function ToggleRecurringBillButton({
+  recurringBillId,
+  recurringBillDescription,
   active,
-}: ToggleCategoryButtonProps) {
+}: ToggleRecurringBillButtonProps) {
   const router = useRouter();
 
   const [isOpen, setIsOpen] = useState(false);
@@ -24,11 +24,11 @@ export function ToggleCategoryButton({
   const [isPending, startTransition] = useTransition();
 
   const actionLabel = active ? "Inativar" : "Ativar";
-  const fullActionLabel = active ? "Inativar categoria" : "Reativar categoria";
+  const fullActionLabel = active ? "Inativar conta fixa" : "Reativar conta fixa";
 
   const description = active
-    ? "Essa categoria não aparecerá mais nos novos lançamentos, mas continuará preservada no histórico."
-    : "Essa categoria voltará a aparecer como opção nos novos lançamentos.";
+    ? "Essa conta fixa não será usada para novos lançamentos, mas continuará no histórico."
+    : "Essa conta fixa voltará a aparecer como opção ativa.";
 
   useEffect(() => {
     if (!isOpen) {
@@ -43,11 +43,6 @@ export function ToggleCategoryButton({
     };
   }, [isOpen]);
 
-  function openModal() {
-    setErrorMessage(null);
-    setIsOpen(true);
-  }
-
   function closeModal() {
     if (isPending) return;
     setIsOpen(false);
@@ -60,10 +55,10 @@ export function ToggleCategoryButton({
 
     startTransition(async () => {
       try {
-        const result = await toggleCategoryStatusAction(categoryId);
+        const result = await toggleRecurringBillStatusAction(recurringBillId);
 
         if (!result?.success) {
-          setErrorMessage("Não foi possível atualizar essa categoria.");
+          setErrorMessage("Não foi possível atualizar essa conta fixa.");
           return;
         }
 
@@ -71,7 +66,7 @@ export function ToggleCategoryButton({
         router.refresh();
       } catch (error) {
         console.error(error);
-        setErrorMessage("Erro ao atualizar a categoria. Tente novamente.");
+        setErrorMessage("Erro ao atualizar a conta fixa.");
       }
     });
   }
@@ -93,7 +88,6 @@ export function ToggleCategoryButton({
               className="account-confirmation-modal__card"
               role="dialog"
               aria-modal="true"
-              aria-labelledby={`category-modal-title-${categoryId}`}
             >
               <div className="account-confirmation-modal__top">
                 <div
@@ -121,13 +115,11 @@ export function ToggleCategoryButton({
                 </button>
               </div>
 
-              <h3 id={`category-modal-title-${categoryId}`}>
-                {fullActionLabel}?
-              </h3>
+              <h3>{fullActionLabel}?</h3>
 
               <p>
-                Você está prestes a {actionLabel.toLowerCase()} a categoria{" "}
-                <strong>{categoryName}</strong>. {description}
+                Você está prestes a {actionLabel.toLowerCase()}{" "}
+                <strong>{recurringBillDescription}</strong>. {description}
               </p>
 
               {errorMessage && (
@@ -149,10 +141,6 @@ export function ToggleCategoryButton({
                 <button
                   type="button"
                   onClick={handleConfirm}
-                  onTouchEnd={(event) => {
-                    event.preventDefault();
-                    handleConfirm();
-                  }}
                   disabled={isPending}
                   className={
                     active
@@ -181,7 +169,7 @@ export function ToggleCategoryButton({
     <>
       <button
         type="button"
-        onClick={openModal}
+        onClick={() => setIsOpen(true)}
         className={
           active
             ? "account-toggle-button account-toggle-button--inactive-action"

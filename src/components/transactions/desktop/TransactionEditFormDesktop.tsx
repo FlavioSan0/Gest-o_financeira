@@ -46,6 +46,7 @@ type TransactionEditData = {
   description: string;
   amount: string;
   transactionDate: string;
+  dueDate: string;
   status: "PAID" | "PENDING" | "OVERDUE" | "CANCELED";
   paymentMethod: PaymentMethod;
   notes: string;
@@ -240,6 +241,22 @@ export function TransactionEditFormDesktop({
                 className="finance-input"
               />
             </div>
+
+            {isExpense && (
+              <div>
+                <label className="mb-2 block text-sm font-bold text-white">
+                  Data de vencimento
+                </label>
+
+                <input
+                  required
+                  type="date"
+                  name="dueDate"
+                  defaultValue={transaction.dueDate || transaction.transactionDate}
+                  className="finance-input"
+                />
+              </div>
+            )}
 
             {isExpense && (
               <div>

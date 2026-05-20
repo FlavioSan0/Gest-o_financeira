@@ -42,6 +42,7 @@ type TransactionEditData = {
   description: string;
   amount: string;
   transactionDate: string;
+  dueDate: string;
   status: "PAID" | "PENDING" | "OVERDUE" | "CANCELED";
   paymentMethod: PaymentMethod;
   notes: string;

@@ -12,32 +12,26 @@ const colorOptions = [
   {
     label: "Verde",
     value: "#22C55E",
-    type: "income",
   },
   {
     label: "Vermelho",
     value: "#EF4444",
-    type: "expense",
   },
   {
     label: "Azul",
     value: "#38BDF8",
-    type: "goal",
   },
   {
     label: "Roxo",
     value: "#A855F7",
-    type: "card",
   },
   {
     label: "Âmbar",
     value: "#F59E0B",
-    type: "pending",
   },
   {
     label: "Cinza",
     value: "#94A3B8",
-    type: "neutral",
   },
 ];
 
@@ -49,11 +43,11 @@ export function CategoryForm({ familyId }: CategoryFormProps) {
   const defaultColor = categoryType === "INCOME" ? "#22C55E" : "#EF4444";
 
   return (
-    <form action={createCategoryAction} className="app-card p-6">
+    <form action={createCategoryAction} className="app-card category-form p-6">
       <input type="hidden" name="familyId" value={familyId} />
       <input type="hidden" name="type" value={categoryType} />
 
-      <div className="flex items-start gap-4">
+      <div className="category-form__header">
         <div className="app-icon-box h-12 w-12">
           <Tags className="h-5 w-5" />
         </div>

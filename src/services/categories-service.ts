@@ -62,3 +62,30 @@ export async function getCategoriesPageData() {
     },
   };
 }
+
+export async function getCategoryForEdit(id: string) {
+  const category = await prisma.category.findUnique({
+    where: {
+      id,
+    },
+    select: {
+      id: true,
+      name: true,
+      type: true,
+      color: true,
+      icon: true,
+    },
+  });
+
+  if (!category) {
+    return null;
+  }
+
+  return {
+    id: category.id,
+    name: category.name,
+    type: category.type,
+    color: category.color ?? "",
+    icon: category.icon ?? "",
+  };
+}
