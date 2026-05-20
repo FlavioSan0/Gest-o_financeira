@@ -131,8 +131,6 @@
     line-height: 1.55;
   }
 
-  /* Botões principais dentro dos headers ficam menos “site”.
-     O botão central do app já fica na bottom nav. */
   .app-container > div:first-child .app-button-primary {
     width: 100%;
     min-height: 48px;
@@ -304,6 +302,173 @@
 
   .mobile-action-sheet__panel {
     padding-bottom: calc(28px + env(safe-area-inset-bottom));
+  }
+
+  /* =========================
+     MOBILE MENU SHEET
+  ========================= */
+
+  .mobile-menu-sheet {
+    position: fixed;
+    inset: 0;
+    z-index: 99990;
+    display: flex;
+    align-items: flex-end;
+    pointer-events: auto;
+  }
+
+  .mobile-menu-sheet__backdrop {
+    position: absolute;
+    inset: 0;
+    z-index: 0;
+    border: 0;
+    background: rgba(0, 0, 0, 0.72);
+    backdrop-filter: blur(14px);
+  }
+
+  .mobile-menu-sheet__panel {
+    position: relative;
+    z-index: 1;
+    display: grid;
+    width: 100%;
+    max-height: min(84vh, 680px);
+    overflow-y: auto;
+    gap: 16px;
+    border-radius: 32px 32px 0 0;
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    border-right: 0;
+    border-bottom: 0;
+    border-left: 0;
+    background:
+      radial-gradient(circle at top right, rgba(255, 255, 255, 0.07), transparent 12rem),
+      linear-gradient(180deg, rgba(255, 255, 255, 0.075), rgba(255, 255, 255, 0.028)),
+      #050816;
+    padding: 10px 14px calc(22px + env(safe-area-inset-bottom));
+    box-shadow: 0 -28px 90px rgba(0, 0, 0, 0.62);
+  }
+
+  .mobile-menu-sheet__handle {
+    margin: 2px auto 0;
+    height: 4px;
+    width: 44px;
+    border-radius: 999px;
+    background: rgba(255, 255, 255, 0.2);
+  }
+
+  .mobile-menu-sheet__header {
+    display: grid;
+    grid-template-columns: auto minmax(0, 1fr) auto;
+    align-items: center;
+    gap: 12px;
+    padding: 6px 2px 0;
+  }
+
+  .mobile-menu-sheet__header-icon,
+  .mobile-menu-sheet__item-icon,
+  .mobile-menu-sheet__footer div {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: #ffffff;
+    color: #020617;
+  }
+
+  .mobile-menu-sheet__header-icon {
+    height: 44px;
+    width: 44px;
+    border-radius: 17px;
+  }
+
+  .mobile-menu-sheet__header h2 {
+    margin-top: 0.1rem;
+    color: #ffffff;
+    font-size: 1.35rem;
+    font-weight: 950;
+    letter-spacing: -0.055em;
+    line-height: 1;
+  }
+
+  .mobile-menu-sheet__close {
+    display: flex;
+    height: 42px;
+    width: 42px;
+    align-items: center;
+    justify-content: center;
+    border-radius: 16px;
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    background: rgba(255, 255, 255, 0.06);
+    color: #ffffff;
+  }
+
+  .mobile-menu-sheet__grid {
+    display: grid;
+    gap: 10px;
+  }
+
+  .mobile-menu-sheet__item {
+    display: grid;
+    grid-template-columns: auto minmax(0, 1fr);
+    align-items: center;
+    gap: 12px;
+    border-radius: 22px;
+    border: 1px solid rgba(255, 255, 255, 0.085);
+    background:
+      linear-gradient(180deg, rgba(255, 255, 255, 0.055), rgba(255, 255, 255, 0.02)),
+      rgba(8, 13, 27, 0.72);
+    padding: 12px;
+  }
+
+  .mobile-menu-sheet__item--active {
+    border-color: rgba(255, 255, 255, 0.18);
+    background:
+      linear-gradient(180deg, rgba(255, 255, 255, 0.085), rgba(255, 255, 255, 0.032)),
+      rgba(8, 13, 27, 0.92);
+  }
+
+  .mobile-menu-sheet__item-icon {
+    height: 42px;
+    width: 42px;
+    border-radius: 16px;
+  }
+
+  .mobile-menu-sheet__item strong {
+    display: block;
+    color: #ffffff;
+    font-size: 0.92rem;
+    font-weight: 950;
+    letter-spacing: -0.03em;
+  }
+
+  .mobile-menu-sheet__item span {
+    margin-top: 0.15rem;
+    display: block;
+    color: rgba(255, 255, 255, 0.46);
+    font-size: 0.72rem;
+    font-weight: 700;
+    line-height: 1.35;
+  }
+
+  .mobile-menu-sheet__footer {
+    display: grid;
+    grid-template-columns: auto minmax(0, 1fr);
+    align-items: center;
+    gap: 10px;
+    border-radius: 22px;
+    background: rgba(255, 255, 255, 0.045);
+    padding: 12px;
+  }
+
+  .mobile-menu-sheet__footer div {
+    height: 34px;
+    width: 34px;
+    border-radius: 13px;
+  }
+
+  .mobile-menu-sheet__footer p {
+    color: rgba(255, 255, 255, 0.48);
+    font-size: 0.72rem;
+    font-weight: 750;
+    line-height: 1.4;
   }
 }
 

@@ -20,7 +20,6 @@ export function ToggleAccountButton({
   const router = useRouter();
 
   const [isOpen, setIsOpen] = useState(false);
-  const [isBrowser, setIsBrowser] = useState(false);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
   const [isPending, startTransition] = useTransition();
 
@@ -30,10 +29,6 @@ export function ToggleAccountButton({
   const description = active
     ? "Essa conta não aparecerá mais em novos lançamentos, mas continuará preservada no histórico."
     : "Essa conta voltará a aparecer como opção nos novos lançamentos.";
-
-  useEffect(() => {
-    setIsBrowser(true);
-  }, []);
 
   useEffect(() => {
     if (!isOpen) {
@@ -85,8 +80,11 @@ export function ToggleAccountButton({
     });
   }
 
+  const portalRoot =
+    typeof document === "undefined" ? null : document.body;
+
   const modal =
-    isOpen && isBrowser
+    isOpen && portalRoot
       ? createPortal(
           <div className="account-confirmation-modal">
             <button
@@ -180,7 +178,7 @@ export function ToggleAccountButton({
               </div>
             </div>
           </div>,
-          document.body,
+          portalRoot,
         )
       : null;
 

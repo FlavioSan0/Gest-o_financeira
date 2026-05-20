@@ -1,5 +1,5 @@
 import type { ReactNode } from "react";
-import { MobileBottomNav } from "@/components/layout/MobileBottomNav";
+import { MobileNavigation } from "@/components/layout/MobileNavigation";
 import { Sidebar } from "@/components/layout/Sidebar";
 import { Topbar } from "@/components/layout/Topbar";
 
@@ -18,7 +18,7 @@ export function AppShell({ children }: AppShellProps) {
         <main className="app-page">{children}</main>
       </div>
 
-      <MobileBottomNav />
+      <MobileNavigation />
     </div>
   );
 }

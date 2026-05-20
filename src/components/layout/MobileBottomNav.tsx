@@ -4,6 +4,10 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { CreditCard, Home, LayoutGrid, Plus, ReceiptText } from "lucide-react";
 
+type MobileBottomNavProps = {
+  onOpenMenu: () => void;
+};
+
 function isActivePath(pathname: string, href: string) {
   if (href === "/") {
     return pathname === "/";
@@ -12,7 +16,18 @@ function isActivePath(pathname: string, href: string) {
   return pathname.startsWith(href);
 }
 
-export function MobileBottomNav() {
+function isMenuActive(pathname: string) {
+  return (
+    pathname.startsWith("/contas") ||
+    pathname.startsWith("/categorias") ||
+    pathname.startsWith("/metas") ||
+    pathname.startsWith("/relatorios") ||
+    pathname.startsWith("/configuracoes") ||
+    pathname.startsWith("/cartoes/faturas")
+  );
+}
+
+export function MobileBottomNav({ onOpenMenu }: MobileBottomNavProps) {
   const pathname = usePathname();
 
   return (
@@ -52,7 +67,8 @@ export function MobileBottomNav() {
       <Link
         href="/cartoes"
         className={
-          isActivePath(pathname, "/cartoes")
+          isActivePath(pathname, "/cartoes") &&
+          !pathname.startsWith("/cartoes/faturas")
             ? "mobile-bottom-nav__item mobile-bottom-nav__item--active"
             : "mobile-bottom-nav__item"
         }
@@ -61,21 +77,19 @@ export function MobileBottomNav() {
         <span>Cartões</span>
       </Link>
 
-      <Link
-        href="/contas"
+      <button
+        type="button"
+        onClick={onOpenMenu}
         className={
-          isActivePath(pathname, "/contas") ||
-          isActivePath(pathname, "/categorias") ||
-          isActivePath(pathname, "/metas") ||
-          isActivePath(pathname, "/relatorios") ||
-          isActivePath(pathname, "/configuracoes")
+          isMenuActive(pathname)
             ? "mobile-bottom-nav__item mobile-bottom-nav__item--active"
             : "mobile-bottom-nav__item"
         }
+        aria-label="Abrir menu"
       >
         <LayoutGrid className="mobile-bottom-nav__icon" />
         <span>Menu</span>
-      </Link>
+      </button>
     </nav>
   );
 }
