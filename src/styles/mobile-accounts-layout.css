@@ -22,8 +22,16 @@
     border-radius: 30px;
     border: 1px solid rgba(255, 255, 255, 0.08);
     background:
-      radial-gradient(circle at top right, rgba(255, 255, 255, 0.07), transparent 9rem),
-      linear-gradient(180deg, rgba(255, 255, 255, 0.07), rgba(255, 255, 255, 0.026)),
+      radial-gradient(
+        circle at top right,
+        rgba(255, 255, 255, 0.07),
+        transparent 9rem
+      ),
+      linear-gradient(
+        180deg,
+        rgba(255, 255, 255, 0.07),
+        rgba(255, 255, 255, 0.026)
+      ),
       rgba(8, 13, 27, 0.84);
     padding: 18px;
   }
@@ -71,8 +79,16 @@
     gap: 16px;
     border-radius: 30px;
     background:
-      radial-gradient(circle at top right, rgba(255, 255, 255, 0.16), transparent 9rem),
-      linear-gradient(180deg, rgba(255, 255, 255, 1), rgba(235, 238, 244, 0.96));
+      radial-gradient(
+        circle at top right,
+        rgba(255, 255, 255, 0.16),
+        transparent 9rem
+      ),
+      linear-gradient(
+        180deg,
+        rgba(255, 255, 255, 1),
+        rgba(235, 238, 244, 0.96)
+      );
     color: #020617;
     padding: 18px;
     box-shadow:
@@ -150,7 +166,11 @@
     border-radius: 24px;
     border: 1px solid rgba(255, 255, 255, 0.08);
     background:
-      linear-gradient(180deg, rgba(255, 255, 255, 0.055), rgba(255, 255, 255, 0.02)),
+      linear-gradient(
+        180deg,
+        rgba(255, 255, 255, 0.055),
+        rgba(255, 255, 255, 0.02)
+      ),
       rgba(8, 13, 27, 0.78);
     padding: 14px;
   }
@@ -202,7 +222,11 @@
     border-radius: 26px;
     border: 1px solid rgba(255, 255, 255, 0.085);
     background:
-      linear-gradient(180deg, rgba(255, 255, 255, 0.06), rgba(255, 255, 255, 0.024)),
+      linear-gradient(
+        180deg,
+        rgba(255, 255, 255, 0.06),
+        rgba(255, 255, 255, 0.024)
+      ),
       rgba(8, 13, 27, 0.78);
     padding: 15px;
   }
@@ -394,30 +418,53 @@
   display: none;
 }
 
+/* =========================================================
+   ACCOUNT MODAL FIX - MOBILE SAFE
+========================================================= */
+
 .account-confirmation-modal {
   position: fixed;
   inset: 0;
-  z-index: 10000;
+  z-index: 99999;
   display: flex;
   align-items: center;
   justify-content: center;
-  background: rgba(0, 0, 0, 0.76);
   padding: 1rem;
+  pointer-events: auto;
+}
+
+.account-confirmation-modal__backdrop {
+  position: absolute;
+  inset: 0;
+  z-index: 0;
+  display: block;
+  border: 0;
+  background: rgba(0, 0, 0, 0.76);
   backdrop-filter: blur(14px);
 }
 
 .account-confirmation-modal__card {
   position: relative;
+  z-index: 1;
   width: min(100%, 28rem);
   overflow: hidden;
   border-radius: 2rem;
   border: 1px solid rgba(255, 255, 255, 0.1);
   background:
-    radial-gradient(circle at top right, rgba(255, 255, 255, 0.07), transparent 10rem),
-    linear-gradient(180deg, rgba(255, 255, 255, 0.07), rgba(255, 255, 255, 0.026)),
+    radial-gradient(
+      circle at top right,
+      rgba(255, 255, 255, 0.07),
+      transparent 10rem
+    ),
+    linear-gradient(
+      180deg,
+      rgba(255, 255, 255, 0.07),
+      rgba(255, 255, 255, 0.026)
+    ),
     #070a12;
   padding: 1.5rem;
   box-shadow: 0 28px 90px rgba(0, 0, 0, 0.58);
+  pointer-events: auto;
 }
 
 .account-confirmation-modal__top {
@@ -461,6 +508,8 @@
   transition:
     background 0.18s ease,
     color 0.18s ease;
+  pointer-events: auto;
+  touch-action: manipulation;
 }
 
 .account-confirmation-modal__close:hover {
@@ -491,6 +540,7 @@
   margin-top: 1.5rem;
   display: flex;
   gap: 0.75rem;
+  pointer-events: auto;
 }
 
 .account-confirmation-modal__cancel,
@@ -509,6 +559,8 @@
     transform 0.18s ease,
     background 0.18s ease,
     color 0.18s ease;
+  pointer-events: auto;
+  touch-action: manipulation;
 }
 
 .account-confirmation-modal__cancel:active,
@@ -525,6 +577,11 @@
 .account-confirmation-modal__cancel:hover {
   background: #ffffff;
   color: #020617;
+}
+
+.account-confirmation-modal__confirm {
+  position: relative;
+  z-index: 2;
 }
 
 .account-confirmation-modal__confirm--warning {
@@ -583,12 +640,14 @@
   }
 
   .account-confirmation-modal__actions {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
     gap: 0.65rem;
   }
 
   .account-confirmation-modal__cancel,
   .account-confirmation-modal__confirm {
-    min-height: 3.1rem;
+    min-height: 3.15rem;
     border-radius: 1.1rem;
   }
 }
