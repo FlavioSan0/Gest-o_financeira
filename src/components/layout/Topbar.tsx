@@ -26,23 +26,39 @@ export async function Topbar() {
       </div>
 
       <div className="topbar-actions">
-        <button className="hidden h-11 w-11 items-center justify-center rounded-2xl border border-white/10 bg-white/5 text-white transition hover:bg-white hover:text-black md:flex">
+        <Link
+          href="/lancamentos"
+          prefetch
+          className="hidden h-11 w-11 items-center justify-center rounded-2xl border border-white/10 bg-white/5 text-white transition hover:bg-white hover:text-black md:flex"
+          title="Buscar lancamentos"
+        >
           <Search className="h-4 w-4" />
-        </button>
+        </Link>
 
-        <button className="hidden h-11 w-11 items-center justify-center rounded-2xl border border-white/10 bg-white/5 text-white transition hover:bg-white hover:text-black md:flex">
+        <Link
+          href="/lancamentos?status=PENDING"
+          prefetch
+          className="hidden h-11 w-11 items-center justify-center rounded-2xl border border-white/10 bg-white/5 text-white transition hover:bg-white hover:text-black md:flex"
+          title="Ver pendencias"
+        >
           <Bell className="h-4 w-4" />
-        </button>
+        </Link>
 
         <Link
           href="/lancamentos/novo"
+          prefetch
           className="app-button-primary topbar-new-button"
         >
           <Plus className="h-4 w-4" />
           Novo lançamento
         </Link>
 
-        <div className="user-pill">
+        <Link
+          href="/configuracoes"
+          prefetch
+          className="user-pill transition hover:border-white/20 hover:bg-white/10"
+          title="Abrir configuracoes"
+        >
           <div className="user-avatar">{initials}</div>
 
           <div className="hidden md:block">
@@ -54,7 +70,7 @@ export async function Topbar() {
               {session?.email ?? "Sessão ativa"}
             </p>
           </div>
-        </div>
+        </Link>
 
         <form action={logoutAction}>
           <button

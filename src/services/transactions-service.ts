@@ -1,6 +1,8 @@
 import { prisma } from "@/lib/prisma";
 import { formatCurrency } from "@/lib/utils";
 import { requireSession } from "@/lib/session";
+import { unstable_cache } from "next/cache";
+import { familyCacheTags } from "@/lib/cache-tags";
 
 type TransactionTypeFilter = "ALL" | "INCOME" | "EXPENSE";
 type TransactionStatusFilter =
@@ -98,12 +100,10 @@ export function getCleanNotes(notes: string | null | undefined) {
   return lines.join("\n").trim();
 }
 
-export async function getTransactionFormOptions() {
-  const session = await requireSession();
-
+async function getTransactionFormOptionsForFamily(familyId: string) {
   const family = await prisma.family.findUnique({
     where: {
-      id: session.familyId,
+      id: familyId,
     },
     include: {
       accounts: {
@@ -135,7 +135,7 @@ export async function getTransactionFormOptions() {
 
   if (!family) {
     return {
-      familyId: session.familyId,
+      familyId,
       accounts: [],
       categories: [],
       creditCards: [],
@@ -164,15 +164,30 @@ export async function getTransactionFormOptions() {
   };
 }
 
-export async function getTransactionsList(filters: TransactionsFilters = {}) {
+export async function getTransactionFormOptions() {
   const session = await requireSession();
+  const tags = familyCacheTags(session.familyId);
 
+  return unstable_cache(
+    getTransactionFormOptionsForFamily,
+    ["transaction-form-options", session.familyId],
+    {
+      revalidate: 120,
+      tags: [tags.options, tags.accounts, tags.categories, tags.cards],
+    },
+  )(session.familyId);
+}
+
+async function getTransactionsListForFamily(
+  familyId: string,
+  filters: TransactionsFilters = {},
+) {
   const month = getValidMonth(filters.month);
   const year = getValidYear(filters.year);
 
   const family = await prisma.family.findUnique({
     where: {
-      id: session.familyId,
+      id: familyId,
     },
     include: {
       members: {
@@ -271,11 +286,37 @@ export async function getTransactionsList(filters: TransactionsFilters = {}) {
       orderBy: {
         transactionDate: "desc",
       },
-      include: {
-        category: true,
-        account: true,
-        creditCard: true,
-        user: true,
+      take: 100,
+      select: {
+        id: true,
+        description: true,
+        amount: true,
+        type: true,
+        status: true,
+        paymentMethod: true,
+        dueDate: true,
+        transactionDate: true,
+        notes: true,
+        category: {
+          select: {
+            name: true,
+          },
+        },
+        account: {
+          select: {
+            name: true,
+          },
+        },
+        creditCard: {
+          select: {
+            name: true,
+          },
+        },
+        user: {
+          select: {
+            name: true,
+          },
+        },
       },
     }),
 
@@ -395,6 +436,33 @@ export async function getTransactionsList(filters: TransactionsFilters = {}) {
       })),
     ],
   };
+}
+
+export async function getTransactionsList(filters: TransactionsFilters = {}) {
+  const session = await requireSession();
+  const normalizedFilters: TransactionsFilters = {
+    search: filters.search ?? "",
+    type: filters.type ?? "ALL",
+    status: filters.status ?? "ALL",
+    paymentMethod: filters.paymentMethod ?? "ALL",
+    responsibleId: filters.responsibleId ?? "ALL",
+    month: getValidMonth(filters.month),
+    year: getValidYear(filters.year),
+  };
+  const tags = familyCacheTags(session.familyId);
+
+  return unstable_cache(
+    getTransactionsListForFamily,
+    [
+      "transactions-list",
+      session.familyId,
+      JSON.stringify(normalizedFilters),
+    ],
+    {
+      revalidate: 30,
+      tags: [tags.transactions],
+    },
+  )(session.familyId, normalizedFilters);
 }
 
 export async function getTransactionForEdit(transactionId: string) {

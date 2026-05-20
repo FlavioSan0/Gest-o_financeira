@@ -1,14 +1,16 @@
 "use server";
 
-import { revalidatePath } from "next/cache";
+import { revalidatePath, revalidateTag } from "next/cache";
 import { redirect } from "next/navigation";
+import { familyCacheTags } from "@/lib/cache-tags";
 import { prisma } from "@/lib/prisma";
+import { requireSession } from "@/lib/session";
 
 function getRequiredValue(formData: FormData, field: string) {
   const value = formData.get(field);
 
   if (!value || typeof value !== "string" || value.trim() === "") {
-    throw new Error(`Campo obrigatório não informado: ${field}`);
+    throw new Error(`Campo obrigatorio nao informado: ${field}`);
   }
 
   return value.trim();
@@ -26,21 +28,29 @@ function getOptionalValue(formData: FormData, field: string) {
 
 function getCategoryType(value: string) {
   if (value !== "INCOME" && value !== "EXPENSE") {
-    throw new Error("Tipo de categoria inválido.");
+    throw new Error("Tipo de categoria invalido.");
   }
 
   return value;
 }
 
-function revalidateCategoriesDependencies() {
+function revalidateCategoriesDependencies(familyId: string) {
+  const tags = familyCacheTags(familyId);
+
+  revalidateTag(tags.categories, "max");
+  revalidateTag(tags.dashboard, "max");
+  revalidateTag(tags.options, "max");
+  revalidateTag(tags.transactions, "max");
   revalidatePath("/");
+  revalidatePath("/dashboard");
   revalidatePath("/categorias");
   revalidatePath("/lancamentos");
   revalidatePath("/lancamentos/novo");
 }
 
 export async function createCategoryAction(formData: FormData) {
-  const familyId = getRequiredValue(formData, "familyId");
+  const session = await requireSession();
+  const familyId = session.familyId;
   const name = getRequiredValue(formData, "name");
   const type = getCategoryType(getRequiredValue(formData, "type"));
   const color = getOptionalValue(formData, "color");
@@ -78,20 +88,22 @@ export async function createCategoryAction(formData: FormData) {
     });
   }
 
-  revalidateCategoriesDependencies();
+  revalidateCategoriesDependencies(familyId);
   redirect("/categorias");
 }
 
 export async function updateCategoryAction(formData: FormData) {
+  const session = await requireSession();
   const categoryId = getRequiredValue(formData, "categoryId");
   const name = getRequiredValue(formData, "name");
   const type = getCategoryType(getRequiredValue(formData, "type"));
   const color = getOptionalValue(formData, "color");
   const icon = getOptionalValue(formData, "icon");
 
-  const category = await prisma.category.findUnique({
+  const category = await prisma.category.findFirst({
     where: {
       id: categoryId,
+      familyId: session.familyId,
     },
     select: {
       id: true,
@@ -99,7 +111,7 @@ export async function updateCategoryAction(formData: FormData) {
   });
 
   if (!category) {
-    throw new Error("Categoria não encontrada.");
+    throw new Error("Categoria nao encontrada.");
   }
 
   await prisma.category.update({
@@ -114,18 +126,21 @@ export async function updateCategoryAction(formData: FormData) {
     },
   });
 
-  revalidateCategoriesDependencies();
+  revalidateCategoriesDependencies(session.familyId);
   redirect("/categorias");
 }
 
 export async function toggleCategoryStatusAction(categoryId: string) {
+  const session = await requireSession();
+
   if (!categoryId || categoryId.trim() === "") {
-    throw new Error("ID da categoria não informado.");
+    throw new Error("ID da categoria nao informado.");
   }
 
-  const category = await prisma.category.findUnique({
+  const category = await prisma.category.findFirst({
     where: {
       id: categoryId,
+      familyId: session.familyId,
     },
     select: {
       id: true,
@@ -134,7 +149,7 @@ export async function toggleCategoryStatusAction(categoryId: string) {
   });
 
   if (!category) {
-    throw new Error("Categoria não encontrada.");
+    throw new Error("Categoria nao encontrada.");
   }
 
   const updatedCategory = await prisma.category.update({
@@ -150,7 +165,7 @@ export async function toggleCategoryStatusAction(categoryId: string) {
     },
   });
 
-  revalidateCategoriesDependencies();
+  revalidateCategoriesDependencies(session.familyId);
 
   return {
     success: true,

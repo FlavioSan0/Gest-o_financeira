@@ -3,8 +3,8 @@ import {
   ArrowDownCircle,
   ArrowRight,
   ArrowUpCircle,
-  BellRing,
   CreditCard,
+  PiggyBank,
   Plus,
   ReceiptText,
   Target,
@@ -12,6 +12,8 @@ import {
   UsersRound,
   Wallet,
 } from "lucide-react";
+import { CategoryExpensesPieChart } from "@/components/dashboard/CategoryExpensesPieChart";
+import { DashboardInsights } from "@/components/dashboard/DashboardInsights";
 import { TransactionsChart } from "@/components/dashboard/TransactionsChart";
 
 type DashboardData = {
@@ -35,6 +37,43 @@ type DashboardData = {
     category: string;
     responsibleId: string | null;
     responsible: string;
+  }[];
+  categoryExpenseSummary: {
+    categoryId: string | null;
+    categoryName: string;
+    amount: number;
+    formattedAmount: string;
+    percentage: number;
+  }[];
+  categoryExpenseForecastSummary: {
+    categoryId: string | null;
+    categoryName: string;
+    amount: number;
+    formattedAmount: string;
+    percentage: number;
+  }[];
+  largestExpense: {
+    id: string;
+    description: string;
+    amount: number;
+    formattedAmount: string;
+    date: string;
+    categoryName: string;
+  } | null;
+  topExpenseCategory: {
+    categoryId: string | null;
+    categoryName: string;
+    amount: number;
+    formattedAmount: string;
+    percentage: number;
+  } | null;
+  upcomingPending: {
+    id: string;
+    description: string;
+    amount: number;
+    formattedAmount: string;
+    dueDate: string;
+    categoryName: string;
   }[];
   responsibleSummaries: {
     id: string;
@@ -69,7 +108,7 @@ function getTransactionIcon(type: "INCOME" | "EXPENSE") {
 }
 
 export function DashboardMobile({ dashboard }: DashboardMobileProps) {
-  const lastTransactions = dashboard.recentTransactions.slice(0, 5);
+  const lastTransactions = dashboard.recentTransactions.slice(0, 4);
 
   return (
     <div className="mobile-dashboard">
@@ -77,7 +116,7 @@ export function DashboardMobile({ dashboard }: DashboardMobileProps) {
         <div className="mobile-balance-card__top">
           <div>
             <p className="mobile-eyebrow">{dashboard.monthLabel}</p>
-            <h2>Saldo previsto</h2>
+            <h2>Saldo real</h2>
           </div>
 
           <div className="mobile-balance-card__icon">
@@ -86,38 +125,53 @@ export function DashboardMobile({ dashboard }: DashboardMobileProps) {
         </div>
 
         <strong>{dashboard.balance}</strong>
-
-        <div className="mobile-balance-card__footer">
-          <div>
-            <span>Entradas</span>
-            <b className="finance-income">{dashboard.income}</b>
-          </div>
-
-          <div>
-            <span>Saídas</span>
-            <b className="finance-expense">{dashboard.expenses}</b>
-          </div>
-        </div>
       </section>
 
-      <TransactionsChart
-        chartTransactions={dashboard.chartTransactions}
-        responsibleSummaries={dashboard.responsibleSummaries}
-      />
+      <section className="mobile-finance-grid">
+        <div className="mobile-finance-card">
+          <span>Entradas</span>
+          <strong className="finance-income">{dashboard.income}</strong>
+          <small>{dashboard.incomeTransactionsCount} pagas</small>
+        </div>
+
+        <div className="mobile-finance-card">
+          <span>Saidas</span>
+          <strong className="finance-expense">{dashboard.expenses}</strong>
+          <small>{dashboard.expenseTransactionsCount} pagas</small>
+        </div>
+
+        <Link
+          href="/lancamentos?status=PENDING"
+          className="mobile-finance-card mobile-finance-card--link"
+        >
+          <span>Pendentes</span>
+          <strong>{dashboard.pendingBillsCount}</strong>
+          <small>Ver lista</small>
+        </Link>
+
+        <Link
+          href="/cartoes"
+          className="mobile-finance-card mobile-finance-card--link"
+        >
+          <span>Cartoes</span>
+          <strong>{dashboard.activeCardsCount}</strong>
+          <small>Ativos</small>
+        </Link>
+      </section>
 
       <section className="mobile-quick-actions">
         <Link href="/lancamentos/novo" className="mobile-quick-action">
           <div>
             <Plus className="h-5 w-5" />
           </div>
-          <span>Lançar</span>
+          <span>Lancar</span>
         </Link>
 
         <Link href="/lancamentos" className="mobile-quick-action">
           <div>
             <ReceiptText className="h-5 w-5" />
           </div>
-          <span>Transações</span>
+          <span>Transacoes</span>
         </Link>
 
         <Link href="/cartoes/faturas" className="mobile-quick-action">
@@ -135,26 +189,44 @@ export function DashboardMobile({ dashboard }: DashboardMobileProps) {
         </Link>
       </section>
 
-      <section className="mobile-alert-card">
+      <DashboardInsights
+        largestExpense={dashboard.largestExpense}
+        topExpenseCategory={dashboard.topExpenseCategory}
+        upcomingPending={dashboard.upcomingPending}
+      />
+
+      <Link href="/lancamentos?status=PENDING" className="mobile-alert-card">
         <div className="mobile-alert-card__icon">
-          <BellRing className="h-5 w-5" />
+          <PiggyBank className="h-5 w-5" />
         </div>
 
         <div>
-          <strong>{dashboard.pendingBillsCount} pendências próximas</strong>
-          <p>
-            Contas, faturas ou lembretes que precisam de atenção neste mês.
-          </p>
+          <strong>{dashboard.pendingBillsCount} pendencias</strong>
+          <p>Previsoes e contas aguardando pagamento.</p>
         </div>
 
         <ArrowRight className="h-4 w-4 text-white/35" />
+      </Link>
+
+      <section className="mobile-dashboard-charts">
+        <TransactionsChart
+          chartTransactions={dashboard.chartTransactions}
+          responsibleSummaries={dashboard.responsibleSummaries}
+        />
+
+        <CategoryExpensesPieChart
+          categoryExpenseSummary={dashboard.categoryExpenseSummary}
+          categoryExpenseForecastSummary={
+            dashboard.categoryExpenseForecastSummary
+          }
+        />
       </section>
 
       <section className="mobile-section">
         <div className="mobile-section__header">
           <div>
-            <p className="mobile-eyebrow">Divisão do casal</p>
-            <h3>Responsáveis</h3>
+            <p className="mobile-eyebrow">Casal</p>
+            <h3>Responsaveis</h3>
           </div>
 
           <Link href="/lancamentos" className="mobile-see-all">
@@ -214,8 +286,8 @@ export function DashboardMobile({ dashboard }: DashboardMobileProps) {
       <section className="mobile-section">
         <div className="mobile-section__header">
           <div>
-            <p className="mobile-eyebrow">Movimentações</p>
-            <h3>Últimos lançamentos</h3>
+            <p className="mobile-eyebrow">Movimentos</p>
+            <h3>Ultimos</h3>
           </div>
 
           <Link href="/lancamentos" className="mobile-see-all">
@@ -241,7 +313,7 @@ export function DashboardMobile({ dashboard }: DashboardMobileProps) {
                   <div className="mobile-transaction-card__content">
                     <strong>{transaction.description}</strong>
                     <span>
-                      {transaction.category} • {transaction.responsible}
+                      {transaction.category} &middot; {transaction.responsible}
                     </span>
                   </div>
 
@@ -256,9 +328,9 @@ export function DashboardMobile({ dashboard }: DashboardMobileProps) {
             })
           ) : (
             <div className="mobile-empty-state">
-              <strong>Nenhum lançamento ainda</strong>
-              <p>Comece registrando sua primeira entrada ou saída.</p>
-              <Link href="/lancamentos/novo">Criar lançamento</Link>
+              <strong>Nenhum lancamento</strong>
+              <p>Comece registrando uma entrada ou saida.</p>
+              <Link href="/lancamentos/novo">Criar lancamento</Link>
             </div>
           )}
         </div>

@@ -1,30 +1,13 @@
+import { unstable_cache } from "next/cache";
+import { familyCacheTags } from "@/lib/cache-tags";
 import { prisma } from "@/lib/prisma";
+import { requireSession } from "@/lib/session";
 import { formatCurrency } from "@/lib/utils";
 
-export async function getAccountsPageData() {
-  const family = await prisma.family.findFirst({
-    where: {
-      name: "Flávio & Ana",
-    },
-  });
-
-  if (!family) {
-    return {
-      familyId: "",
-      accounts: [],
-      summary: {
-        total: 0,
-        active: 0,
-        inactive: 0,
-        totalCurrentBalance: formatCurrency(0),
-        totalInitialBalance: formatCurrency(0),
-      },
-    };
-  }
-
+async function getAccountsPageDataForFamily(familyId: string) {
   const accounts = await prisma.account.findMany({
     where: {
-      familyId: family.id,
+      familyId,
     },
     orderBy: [
       {
@@ -34,6 +17,14 @@ export async function getAccountsPageData() {
         name: "asc",
       },
     ],
+    select: {
+      id: true,
+      name: true,
+      type: true,
+      initialBalance: true,
+      currentBalance: true,
+      active: true,
+    },
   });
 
   const activeAccounts = accounts.filter((account) => account.active);
@@ -50,7 +41,7 @@ export async function getAccountsPageData() {
   );
 
   return {
-    familyId: family.id,
+    familyId,
     accounts: accounts.map((account) => ({
       id: account.id,
       name: account.name,
@@ -69,4 +60,18 @@ export async function getAccountsPageData() {
       totalInitialBalance: formatCurrency(totalInitialBalance),
     },
   };
+}
+
+export async function getAccountsPageData() {
+  const session = await requireSession();
+  const tags = familyCacheTags(session.familyId);
+
+  return unstable_cache(
+    getAccountsPageDataForFamily,
+    ["accounts-page", session.familyId],
+    {
+      revalidate: 60,
+      tags: [tags.accounts, tags.options],
+    },
+  )(session.familyId);
 }

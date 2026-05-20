@@ -1,9 +1,10 @@
 "use server";
 
-import { revalidatePath } from "next/cache";
+import { revalidatePath, revalidateTag } from "next/cache";
 import { redirect } from "next/navigation";
 import { prisma } from "@/lib/prisma";
 import { requireSession } from "@/lib/session";
+import { familyCacheTags } from "@/lib/cache-tags";
 
 type TransactionType = "INCOME" | "EXPENSE";
 type TransactionStatus = "PAID" | "PENDING" | "OVERDUE" | "CANCELED";
@@ -221,8 +222,16 @@ async function validateCreditCardBelongsToFamily(
   }
 }
 
-function revalidateFinancialPages() {
+function revalidateFinancialPages(familyId: string) {
+  const tags = familyCacheTags(familyId);
+
+  revalidateTag(tags.dashboard, "max");
+  revalidateTag(tags.transactions, "max");
+  revalidateTag(tags.accounts, "max");
+  revalidateTag(tags.cards, "max");
+  revalidateTag(tags.recurring, "max");
   revalidatePath("/");
+  revalidatePath("/dashboard");
   revalidatePath("/lancamentos");
   revalidatePath("/lancamentos/novo");
   revalidatePath("/contas");
@@ -457,7 +466,7 @@ export async function createTransactionAction(formData: FormData) {
     }
   });
 
-  revalidateFinancialPages();
+  revalidateFinancialPages(familyId);
 
   redirect("/lancamentos");
 }
@@ -545,7 +554,7 @@ export async function updateTransactionAction(formData: FormData) {
     }
   });
 
-  revalidateFinancialPages();
+  revalidateFinancialPages(session.familyId);
 
   redirect("/lancamentos");
 }
@@ -582,7 +591,7 @@ export async function deleteTransactionAction(formData: FormData) {
     });
   });
 
-  revalidateFinancialPages();
+  revalidateFinancialPages(session.familyId);
 
   redirect("/lancamentos");
 }

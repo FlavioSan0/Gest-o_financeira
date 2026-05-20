@@ -1,13 +1,15 @@
 "use server";
 
-import { revalidatePath } from "next/cache";
+import { revalidatePath, revalidateTag } from "next/cache";
+import { familyCacheTags } from "@/lib/cache-tags";
 import { prisma } from "@/lib/prisma";
+import { requireSession } from "@/lib/session";
 
 function getRequiredValue(formData: FormData, field: string) {
   const value = formData.get(field);
 
   if (!value || typeof value !== "string" || value.trim() === "") {
-    throw new Error(`Campo obrigatório não informado: ${field}`);
+    throw new Error(`Campo obrigatorio nao informado: ${field}`);
   }
 
   return value.trim();
@@ -50,8 +52,23 @@ function parseDayValue(value: string, fieldName: string) {
   return numericValue;
 }
 
+function revalidateCreditCardDependencies(familyId: string) {
+  const tags = familyCacheTags(familyId);
+
+  revalidateTag(tags.cards, "max");
+  revalidateTag(tags.dashboard, "max");
+  revalidateTag(tags.options, "max");
+  revalidateTag(tags.transactions, "max");
+  revalidatePath("/");
+  revalidatePath("/dashboard");
+  revalidatePath("/cartoes");
+  revalidatePath("/cartoes/faturas");
+  revalidatePath("/lancamentos/novo");
+}
+
 export async function createCreditCardAction(formData: FormData) {
-  const familyId = getRequiredValue(formData, "familyId");
+  const session = await requireSession();
+  const familyId = session.familyId;
   const name = getRequiredValue(formData, "name");
   const bank = getOptionalValue(formData, "bank");
   const limitAmount = parseCurrencyValue(
@@ -102,25 +119,36 @@ export async function createCreditCardAction(formData: FormData) {
     });
   }
 
-  revalidatePath("/cartoes");
-  revalidatePath("/lancamentos/novo");
-  revalidatePath("/");
+  revalidateCreditCardDependencies(familyId);
 }
 
 export async function toggleCreditCardStatusAction(formData: FormData) {
+  const session = await requireSession();
   const creditCardId = getRequiredValue(formData, "creditCardId");
   const currentStatus = getRequiredValue(formData, "currentStatus");
 
-  await prisma.creditCard.update({
+  const creditCard = await prisma.creditCard.findFirst({
     where: {
       id: creditCardId,
+      familyId: session.familyId,
+    },
+    select: {
+      id: true,
+    },
+  });
+
+  if (!creditCard) {
+    throw new Error("Cartao nao encontrado.");
+  }
+
+  await prisma.creditCard.update({
+    where: {
+      id: creditCard.id,
     },
     data: {
       active: currentStatus !== "true",
     },
   });
 
-  revalidatePath("/cartoes");
-  revalidatePath("/lancamentos/novo");
-  revalidatePath("/");
+  revalidateCreditCardDependencies(session.familyId);
 }

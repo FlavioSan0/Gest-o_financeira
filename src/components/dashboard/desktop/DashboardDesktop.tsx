@@ -1,4 +1,6 @@
+import { CategoryExpensesPieChart } from "@/components/dashboard/CategoryExpensesPieChart";
 import { DashboardHero } from "@/components/dashboard/DashboardHero";
+import { DashboardInsights } from "@/components/dashboard/DashboardInsights";
 import { MonthlyOverview } from "@/components/dashboard/MonthlyOverview";
 import { RecentTransactions } from "@/components/dashboard/RecentTransactions";
 import { ResponsibleOverview } from "@/components/dashboard/ResponsibleOverview";
@@ -34,6 +36,43 @@ type DashboardData = {
     responsibleId: string | null;
     responsible: string;
   }[];
+  categoryExpenseSummary: {
+    categoryId: string | null;
+    categoryName: string;
+    amount: number;
+    formattedAmount: string;
+    percentage: number;
+  }[];
+  categoryExpenseForecastSummary: {
+    categoryId: string | null;
+    categoryName: string;
+    amount: number;
+    formattedAmount: string;
+    percentage: number;
+  }[];
+  largestExpense: {
+    id: string;
+    description: string;
+    amount: number;
+    formattedAmount: string;
+    date: string;
+    categoryName: string;
+  } | null;
+  topExpenseCategory: {
+    categoryId: string | null;
+    categoryName: string;
+    amount: number;
+    formattedAmount: string;
+    percentage: number;
+  } | null;
+  upcomingPending: {
+    id: string;
+    description: string;
+    amount: number;
+    formattedAmount: string;
+    dueDate: string;
+    categoryName: string;
+  }[];
   responsibleSummaries: {
     id: string;
     name: string;
@@ -61,35 +100,35 @@ type DashboardDesktopProps = {
 export function DashboardDesktop({ dashboard }: DashboardDesktopProps) {
   const summaryCards = [
     {
-      title: "Saldo previsto",
+      title: "Saldo real",
       value: dashboard.balance,
-      description: "Saldo com valores PAID do mês",
+      description: "Apenas PAID no mes",
       icon: Wallet,
-      detail: "Resumo financeiro direto",
+      detail: "Entradas - saidas",
       valueClassName: "text-white",
     },
     {
       title: "Receita",
       value: dashboard.income,
-      description: "Receitas PAID",
+      description: "Receitas pagas",
       icon: ArrowUpCircle,
-      detail: `${dashboard.incomeTransactionsCount} lançamentos`,
+      detail: `${dashboard.incomeTransactionsCount} lancamentos`,
       valueClassName: "finance-income",
     },
     {
       title: "Despesa",
       value: dashboard.expenses,
-      description: "Despesas PAID",
+      description: "Despesas pagas",
       icon: ArrowDownCircle,
-      detail: `${dashboard.expenseTransactionsCount} lançamentos`,
+      detail: `${dashboard.expenseTransactionsCount} lancamentos`,
       valueClassName: "finance-expense",
     },
     {
       title: "Pendentes",
       value: `${dashboard.pendingBillsCount}`,
-      description: "Contas aguardando pagamento",
+      description: "Aguardando pagamento",
       icon: PiggyBank,
-      detail: "Apenas pendências ativas",
+      detail: "Ver previsao",
       valueClassName: "text-white",
     },
   ];
@@ -107,10 +146,25 @@ export function DashboardDesktop({ dashboard }: DashboardDesktopProps) {
         ))}
       </section>
 
-      <TransactionsChart
-        chartTransactions={dashboard.chartTransactions}
-        responsibleSummaries={dashboard.responsibleSummaries}
+      <DashboardInsights
+        largestExpense={dashboard.largestExpense}
+        topExpenseCategory={dashboard.topExpenseCategory}
+        upcomingPending={dashboard.upcomingPending}
       />
+
+      <section className="dashboard-charts-grid">
+        <TransactionsChart
+          chartTransactions={dashboard.chartTransactions}
+          responsibleSummaries={dashboard.responsibleSummaries}
+        />
+
+        <CategoryExpensesPieChart
+          categoryExpenseSummary={dashboard.categoryExpenseSummary}
+          categoryExpenseForecastSummary={
+            dashboard.categoryExpenseForecastSummary
+          }
+        />
+      </section>
 
       <ResponsibleOverview
         totalBalance={dashboard.balance}

@@ -1,13 +1,15 @@
 "use server";
 
-import { revalidatePath } from "next/cache";
+import { revalidatePath, revalidateTag } from "next/cache";
+import { familyCacheTags } from "@/lib/cache-tags";
 import { prisma } from "@/lib/prisma";
+import { requireSession } from "@/lib/session";
 
 function getRequiredValue(formData: FormData, field: string) {
   const value = formData.get(field);
 
   if (!value || typeof value !== "string" || value.trim() === "") {
-    throw new Error(`Campo obrigatório não informado: ${field}`);
+    throw new Error(`Campo obrigatorio nao informado: ${field}`);
   }
 
   return value.trim();
@@ -40,8 +42,15 @@ function parseCurrencyValue(value: string | null) {
   return numericValue;
 }
 
-function revalidateAccountsDependencies() {
+function revalidateAccountsDependencies(familyId: string) {
+  const tags = familyCacheTags(familyId);
+
+  revalidateTag(tags.accounts, "max");
+  revalidateTag(tags.dashboard, "max");
+  revalidateTag(tags.options, "max");
+  revalidateTag(tags.transactions, "max");
   revalidatePath("/");
+  revalidatePath("/dashboard");
   revalidatePath("/contas");
   revalidatePath("/lancamentos");
   revalidatePath("/lancamentos/novo");
@@ -49,7 +58,8 @@ function revalidateAccountsDependencies() {
 }
 
 export async function createAccountAction(formData: FormData) {
-  const familyId = getRequiredValue(formData, "familyId");
+  const session = await requireSession();
+  const familyId = session.familyId;
   const name = getRequiredValue(formData, "name");
 
   const type = getRequiredValue(formData, "type") as
@@ -96,19 +106,20 @@ export async function createAccountAction(formData: FormData) {
     });
   }
 
-  revalidateAccountsDependencies();
+  revalidateAccountsDependencies(familyId);
 }
 
 export async function toggleAccountStatusAction(accountId: string) {
-  console.log("[toggleAccountStatusAction] Recebido accountId:", accountId);
+  const session = await requireSession();
 
   if (!accountId || accountId.trim() === "") {
-    throw new Error("ID da conta não informado.");
+    throw new Error("ID da conta nao informado.");
   }
 
-  const account = await prisma.account.findUnique({
+  const account = await prisma.account.findFirst({
     where: {
       id: accountId,
+      familyId: session.familyId,
     },
     select: {
       id: true,
@@ -118,15 +129,8 @@ export async function toggleAccountStatusAction(accountId: string) {
   });
 
   if (!account) {
-    console.log("[toggleAccountStatusAction] Conta não encontrada.");
-    throw new Error("Conta não encontrada.");
+    throw new Error("Conta nao encontrada.");
   }
-
-  console.log("[toggleAccountStatusAction] Conta encontrada:", {
-    id: account.id,
-    name: account.name,
-    active: account.active,
-  });
 
   const updatedAccount = await prisma.account.update({
     where: {
@@ -142,13 +146,7 @@ export async function toggleAccountStatusAction(accountId: string) {
     },
   });
 
-  console.log("[toggleAccountStatusAction] Conta atualizada:", {
-    id: updatedAccount.id,
-    name: updatedAccount.name,
-    active: updatedAccount.active,
-  });
-
-  revalidateAccountsDependencies();
+  revalidateAccountsDependencies(session.familyId);
 
   return {
     success: true,

@@ -1,0 +1,10 @@
+{
+  "appId": "com.sannode.quebrei",
+  "appName": "Quebrei",
+  "webDir": "public",
+  "bundledWebRuntime": false,
+  "server": {
+    "url": "https://quebrei.vercel.app",
+    "cleartext": false
+  }
+}

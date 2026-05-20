@@ -1,4 +1,7 @@
+import { unstable_cache } from "next/cache";
+import { familyCacheTags } from "@/lib/cache-tags";
 import { prisma } from "@/lib/prisma";
+import { requireSession } from "@/lib/session";
 import { formatCurrency } from "@/lib/utils";
 
 function getCurrentMonthMarker() {
@@ -18,13 +21,11 @@ function getNextDueDateLabel(dueDay: number) {
   const safeDueDay = Math.min(Math.max(dueDay, 1), lastDayOfMonth);
   const dueDate = new Date(year, month, safeDueDay, 12, 0, 0);
 
-  const formatter = new Intl.DateTimeFormat("pt-BR", {
+  return new Intl.DateTimeFormat("pt-BR", {
     day: "2-digit",
     month: "2-digit",
     year: "numeric",
-  });
-
-  return formatter.format(dueDate);
+  }).format(dueDate);
 }
 
 function getDaysUntilDue(dueDay: number) {
@@ -35,37 +36,16 @@ function getDaysUntilDue(dueDay: number) {
   const lastDayOfMonth = new Date(year, month + 1, 0).getDate();
   const safeDueDay = Math.min(Math.max(dueDay, 1), lastDayOfMonth);
   const dueDate = new Date(year, month, safeDueDay, 23, 59, 59);
-
   const diff = dueDate.getTime() - now.getTime();
 
   return Math.ceil(diff / (1000 * 60 * 60 * 24));
 }
 
-export async function getRecurringBillsPageData() {
-  const family = await prisma.family.findFirst({
-    where: {
-      name: "Flávio & Ana",
-    },
-  });
-
-  if (!family) {
-    return {
-      familyId: "",
-      categories: [],
-      recurringBills: [],
-      summary: {
-        total: 0,
-        active: 0,
-        inactive: 0,
-        monthlyForecast: formatCurrency(0),
-      },
-    };
-  }
-
+async function getRecurringBillsPageDataForFamily(familyId: string) {
   const [categories, recurringBills] = await Promise.all([
     prisma.category.findMany({
       where: {
-        familyId: family.id,
+        familyId,
         type: "EXPENSE",
         active: true,
       },
@@ -80,7 +60,7 @@ export async function getRecurringBillsPageData() {
 
     prisma.recurringBill.findMany({
       where: {
-        familyId: family.id,
+        familyId,
       },
       orderBy: [
         {
@@ -93,7 +73,13 @@ export async function getRecurringBillsPageData() {
           description: "asc",
         },
       ],
-      include: {
+      select: {
+        id: true,
+        description: true,
+        amount: true,
+        dueDay: true,
+        frequency: true,
+        active: true,
         category: {
           select: {
             id: true,
@@ -118,7 +104,7 @@ export async function getRecurringBillsPageData() {
 
   const generatedTransactions = await prisma.transaction.findMany({
     where: {
-      familyId: family.id,
+      familyId,
       notes: {
         contains: `RECURRENTE_MES:${currentMonthMarker}`,
       },
@@ -140,7 +126,7 @@ export async function getRecurringBillsPageData() {
   );
 
   return {
-    familyId: family.id,
+    familyId,
     categories: categories.map((category) => ({
       id: category.id,
       name: category.name,
@@ -167,4 +153,18 @@ export async function getRecurringBillsPageData() {
       monthlyForecast: formatCurrency(monthlyForecast),
     },
   };
+}
+
+export async function getRecurringBillsPageData() {
+  const session = await requireSession();
+  const tags = familyCacheTags(session.familyId);
+
+  return unstable_cache(
+    getRecurringBillsPageDataForFamily,
+    ["recurring-bills-page", session.familyId, getCurrentMonthMarker()],
+    {
+      revalidate: 60,
+      tags: [tags.recurring, tags.categories, tags.transactions],
+    },
+  )(session.familyId);
 }

@@ -1,4 +1,7 @@
+import { unstable_cache } from "next/cache";
+import { familyCacheTags } from "@/lib/cache-tags";
 import { prisma } from "@/lib/prisma";
+import { requireSession } from "@/lib/session";
 import { formatCurrency } from "@/lib/utils";
 
 export type CardInvoiceFilters = {
@@ -39,15 +42,16 @@ function getAvailableYears() {
   return [currentYear - 1, currentYear, currentYear + 1];
 }
 
-export async function getCardInvoicesPageData(
+async function getCardInvoicesPageDataForFamily(
+  familyId: string,
   filters: CardInvoiceFilters = {},
 ) {
   const selectedMonth = filters.month ?? getCurrentMonth();
   const selectedYear = filters.year ?? getCurrentYear();
 
-  const family = await prisma.family.findFirst({
+  const family = await prisma.family.findUnique({
     where: {
-      name: "Flávio & Ana",
+      id: familyId,
     },
     include: {
       creditCards: {
@@ -86,7 +90,7 @@ export async function getCardInvoicesPageData(
       overview: {
         totalAmount: formatCurrency(0),
         totalTransactions: 0,
-        selectedCardName: "Todos os cartões",
+        selectedCardName: "Todos os cartoes",
         paidAmount: formatCurrency(0),
         pendingAmount: formatCurrency(0),
       },
@@ -104,7 +108,7 @@ export async function getCardInvoicesPageData(
   const [transactions, existingInvoice] = await Promise.all([
     prisma.transaction.findMany({
       where: {
-        familyId: family.id,
+        familyId,
         type: "EXPENSE",
         paymentMethod: "CREDIT_CARD",
         creditCardId: selectedCreditCardId,
@@ -119,10 +123,27 @@ export async function getCardInvoicesPageData(
       orderBy: {
         transactionDate: "desc",
       },
-      include: {
-        creditCard: true,
-        category: true,
-        user: true,
+      select: {
+        id: true,
+        description: true,
+        amount: true,
+        transactionDate: true,
+        status: true,
+        creditCard: {
+          select: {
+            name: true,
+          },
+        },
+        category: {
+          select: {
+            name: true,
+          },
+        },
+        user: {
+          select: {
+            name: true,
+          },
+        },
       },
     }),
 
@@ -168,7 +189,7 @@ export async function getCardInvoicesPageData(
         ? "Pendente"
         : invoiceStatus === "OVERDUE"
           ? "Atrasada"
-          : "Não gerada";
+          : "Nao gerada";
 
   const canPayInvoice =
     Boolean(selectedCreditCardId) &&
@@ -184,7 +205,7 @@ export async function getCardInvoicesPageData(
     creditCards: family.creditCards.map((card) => ({
       id: card.id,
       name: card.name,
-      bank: card.bank ?? "Banco não informado",
+      bank: card.bank ?? "Banco nao informado",
       closingDay: card.closingDay,
       dueDay: card.dueDay,
     })),
@@ -201,7 +222,7 @@ export async function getCardInvoicesPageData(
     overview: {
       totalAmount: formatCurrency(totalAmount),
       totalTransactions: transactions.length,
-      selectedCardName: selectedCard ? selectedCard.name : "Todos os cartões",
+      selectedCardName: selectedCard ? selectedCard.name : "Todos os cartoes",
       paidAmount: formatCurrency(paidAmount),
       pendingAmount: formatCurrency(pendingAmount),
     },
@@ -214,11 +235,36 @@ export async function getCardInvoicesPageData(
       ),
       status: transaction.status,
       category: transaction.category?.name ?? "Sem categoria",
-      creditCard: transaction.creditCard?.name ?? "Cartão não informado",
+      creditCard: transaction.creditCard?.name ?? "Cartao nao informado",
       responsible:
         transaction.user?.name === "Ana"
           ? "Ana Paula"
-          : transaction.user?.name ?? "Não informado",
+          : transaction.user?.name ?? "Nao informado",
     })),
   };
+}
+
+export async function getCardInvoicesPageData(
+  filters: CardInvoiceFilters = {},
+) {
+  const session = await requireSession();
+  const normalizedFilters = {
+    creditCardId: filters.creditCardId ?? "ALL",
+    month: filters.month ?? getCurrentMonth(),
+    year: filters.year ?? getCurrentYear(),
+  };
+  const tags = familyCacheTags(session.familyId);
+
+  return unstable_cache(
+    getCardInvoicesPageDataForFamily,
+    [
+      "card-invoices-page",
+      session.familyId,
+      JSON.stringify(normalizedFilters),
+    ],
+    {
+      revalidate: 60,
+      tags: [tags.cards, tags.accounts, tags.transactions],
+    },
+  )(session.familyId, normalizedFilters);
 }

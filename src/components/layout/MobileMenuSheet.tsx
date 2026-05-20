@@ -137,6 +137,7 @@ export function MobileMenuSheet({ isOpen, onClose }: MobileMenuSheetProps) {
               <Link
                 key={item.href}
                 href={item.href}
+                prefetch
                 onClick={onClose}
                 className={
                   active

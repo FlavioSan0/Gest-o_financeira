@@ -1,29 +1,13 @@
+import { unstable_cache } from "next/cache";
+import { familyCacheTags } from "@/lib/cache-tags";
 import { prisma } from "@/lib/prisma";
+import { requireSession } from "@/lib/session";
 import { formatCurrency } from "@/lib/utils";
 
-export async function getCreditCardsPageData() {
-  const family = await prisma.family.findFirst({
-    where: {
-      name: "Flávio & Ana",
-    },
-  });
-
-  if (!family) {
-    return {
-      familyId: "",
-      creditCards: [],
-      summary: {
-        total: 0,
-        active: 0,
-        inactive: 0,
-        totalLimit: formatCurrency(0),
-      },
-    };
-  }
-
+async function getCreditCardsPageDataForFamily(familyId: string) {
   const creditCards = await prisma.creditCard.findMany({
     where: {
-      familyId: family.id,
+      familyId,
     },
     orderBy: [
       {
@@ -33,6 +17,15 @@ export async function getCreditCardsPageData() {
         name: "asc",
       },
     ],
+    select: {
+      id: true,
+      name: true,
+      bank: true,
+      limitAmount: true,
+      closingDay: true,
+      dueDay: true,
+      active: true,
+    },
   });
 
   const activeCards = creditCards.filter((card) => card.active);
@@ -44,11 +37,11 @@ export async function getCreditCardsPageData() {
   );
 
   return {
-    familyId: family.id,
+    familyId,
     creditCards: creditCards.map((card) => ({
       id: card.id,
       name: card.name,
-      bank: card.bank ?? "Banco não informado",
+      bank: card.bank ?? "Banco nao informado",
       limitAmount: formatCurrency(Number(card.limitAmount)),
       rawLimitAmount: Number(card.limitAmount),
       closingDay: card.closingDay,
@@ -62,4 +55,18 @@ export async function getCreditCardsPageData() {
       totalLimit: formatCurrency(totalLimit),
     },
   };
+}
+
+export async function getCreditCardsPageData() {
+  const session = await requireSession();
+  const tags = familyCacheTags(session.familyId);
+
+  return unstable_cache(
+    getCreditCardsPageDataForFamily,
+    ["credit-cards-page", session.familyId],
+    {
+      revalidate: 60,
+      tags: [tags.cards, tags.options],
+    },
+  )(session.familyId);
 }

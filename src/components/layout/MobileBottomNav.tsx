@@ -34,6 +34,7 @@ export function MobileBottomNav({ onOpenMenu }: MobileBottomNavProps) {
     <nav className="mobile-bottom-nav" aria-label="Navegação mobile">
       <Link
         href="/"
+        prefetch
         className={
           isActivePath(pathname, "/")
             ? "mobile-bottom-nav__item mobile-bottom-nav__item--active"
@@ -46,6 +47,7 @@ export function MobileBottomNav({ onOpenMenu }: MobileBottomNavProps) {
 
       <Link
         href="/lancamentos"
+        prefetch
         className={
           isActivePath(pathname, "/lancamentos")
             ? "mobile-bottom-nav__item mobile-bottom-nav__item--active"
@@ -58,6 +60,7 @@ export function MobileBottomNav({ onOpenMenu }: MobileBottomNavProps) {
 
       <Link
         href="/lancamentos/novo"
+        prefetch
         className="mobile-bottom-nav__main-action"
         aria-label="Novo lançamento"
       >
@@ -66,6 +69,7 @@ export function MobileBottomNav({ onOpenMenu }: MobileBottomNavProps) {
 
       <Link
         href="/cartoes"
+        prefetch
         className={
           isActivePath(pathname, "/cartoes") &&
           !pathname.startsWith("/cartoes/faturas")

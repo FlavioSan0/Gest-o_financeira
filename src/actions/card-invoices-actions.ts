@@ -1,7 +1,9 @@
 "use server";
 
-import { revalidatePath } from "next/cache";
+import { revalidatePath, revalidateTag } from "next/cache";
+import { familyCacheTags } from "@/lib/cache-tags";
 import { prisma } from "@/lib/prisma";
+import { requireSession } from "@/lib/session";
 
 function getRequiredValue(formData: FormData, field: string) {
   const value = formData.get(field);
@@ -24,6 +26,7 @@ function parseNumberValue(value: string, fieldName: string) {
 }
 
 export async function payCardInvoiceAction(formData: FormData) {
+  const session = await requireSession();
   const creditCardId = getRequiredValue(formData, "creditCardId");
   const accountId = getRequiredValue(formData, "accountId");
 
@@ -34,8 +37,24 @@ export async function payCardInvoiceAction(formData: FormData) {
   const end = new Date(year, month, 1);
 
   await prisma.$transaction(async () => {
+    const account = await prisma.account.findFirst({
+      where: {
+        id: accountId,
+        familyId: session.familyId,
+        active: true,
+      },
+      select: {
+        id: true,
+      },
+    });
+
+    if (!account) {
+      throw new Error("Conta invalida para esta familia.");
+    }
+
     const transactions = await prisma.transaction.findMany({
       where: {
+        familyId: session.familyId,
         creditCardId,
         paymentMethod: "CREDIT_CARD",
         type: "EXPENSE",
@@ -97,7 +116,7 @@ export async function payCardInvoiceAction(formData: FormData) {
 
     await prisma.account.update({
       where: {
-        id: accountId,
+        id: account.id,
       },
       data: {
         currentBalance: {
@@ -120,7 +139,14 @@ export async function payCardInvoiceAction(formData: FormData) {
     });
   });
 
+  const tags = familyCacheTags(session.familyId);
+
+  revalidateTag(tags.accounts, "max");
+  revalidateTag(tags.cards, "max");
+  revalidateTag(tags.dashboard, "max");
+  revalidateTag(tags.transactions, "max");
   revalidatePath("/");
+  revalidatePath("/dashboard");
   revalidatePath("/contas");
   revalidatePath("/lancamentos");
   revalidatePath("/cartoes");

@@ -28,22 +28,16 @@ type TransactionsChartProps = {
   responsibleSummaries: ResponsibleSummary[];
 };
 
+const currencyFormatter = new Intl.NumberFormat("pt-BR", {
+  style: "currency",
+  currency: "BRL",
+});
+
 function getMonthKey(dateValue: string) {
   const date = new Date(dateValue);
   const year = date.getFullYear();
   const month = String(date.getMonth() + 1).padStart(2, "0");
   return `${year}-${month}`;
-}
-
-function getMonthLabel(dateValue: string) {
-  const date = new Date(dateValue);
-
-  return new Intl.DateTimeFormat("pt-BR", {
-    month: "short",
-    year: "2-digit",
-  })
-    .format(date)
-    .replace(/\./g, "");
 }
 
 function getMonthLabelFromKey(monthKey: string) {
@@ -128,9 +122,20 @@ export function TransactionsChart({
         selectedResponsible === "COUPLE" ||
         transaction.responsibleId === selectedResponsible;
 
-      return statusMatches && monthMatches && categoryMatches && responsibleMatches;
+      return (
+        statusMatches &&
+        monthMatches &&
+        categoryMatches &&
+        responsibleMatches
+      );
     });
-  }, [chartTransactions, includePending, selectedMonth, selectedCategory, selectedResponsible]);
+  }, [
+    chartTransactions,
+    includePending,
+    selectedMonth,
+    selectedCategory,
+    selectedResponsible,
+  ]);
 
   const chartPoints = useMemo(() => {
     if (selectedMonth !== "ALL") {
@@ -194,26 +199,26 @@ export function TransactionsChart({
   );
 
   return (
-    <article className="app-card p-6 transactions-chart">
-      <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
+    <article className="app-card transactions-chart dashboard-chart-card p-5">
+      <div className="flex flex-col gap-4">
         <div>
           <p className="text-sm font-medium app-faint-text">
-            Gráfico interativo
+            Gr&aacute;fico interativo
           </p>
-          <h2 className="text-2xl font-bold tracking-[-0.03em] text-white">
+          <h2 className="text-xl font-bold tracking-[-0.03em] text-white">
             Receita x Despesa
           </h2>
         </div>
 
-        <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
+        <div className="grid gap-2 sm:grid-cols-3">
           <label className="block">
-            <span className="text-xs uppercase tracking-[0.18em] text-white/50">
-              Mês
+            <span className="text-[0.66rem] font-bold uppercase tracking-[0.14em] text-white/45">
+              M&ecirc;s
             </span>
             <select
               value={selectedMonth}
               onChange={(event) => setSelectedMonth(event.target.value)}
-              className="finance-input mt-2 w-full"
+              className="finance-input transactions-chart__select mt-1.5 w-full"
             >
               <option value="ALL">Todos</option>
               {monthOptions.map(([monthKey, label]) => (
@@ -225,13 +230,13 @@ export function TransactionsChart({
           </label>
 
           <label className="block">
-            <span className="text-xs uppercase tracking-[0.18em] text-white/50">
+            <span className="text-[0.66rem] font-bold uppercase tracking-[0.14em] text-white/45">
               Categoria
             </span>
             <select
               value={selectedCategory}
               onChange={(event) => setSelectedCategory(event.target.value)}
-              className="finance-input mt-2 w-full"
+              className="finance-input transactions-chart__select mt-1.5 w-full"
             >
               <option value="ALL">Todas</option>
               {categoryOptions.map((category) => (
@@ -243,13 +248,13 @@ export function TransactionsChart({
           </label>
 
           <label className="block">
-            <span className="text-xs uppercase tracking-[0.18em] text-white/50">
-              Responsável
+            <span className="text-[0.66rem] font-bold uppercase tracking-[0.14em] text-white/45">
+              Respons&aacute;vel
             </span>
             <select
               value={selectedResponsible}
               onChange={(event) => setSelectedResponsible(event.target.value)}
-              className="finance-input mt-2 w-full"
+              className="finance-input transactions-chart__select mt-1.5 w-full"
             >
               {responsibleOptions.map((option) => (
                 <option key={option.id} value={option.id}>
@@ -261,48 +266,27 @@ export function TransactionsChart({
         </div>
       </div>
 
-      <div className="mt-5 flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
-        <div className="flex items-center gap-3 text-sm text-white/70">
-          <label className="inline-flex cursor-pointer items-center gap-2">
-            <input
-              type="checkbox"
-              checked={includePending}
-              onChange={(event) => setIncludePending(event.target.checked)}
-              className="h-4 w-4 rounded border-white/20 bg-black text-white"
-            />
-            Incluir pendentes como previsão
-          </label>
-        </div>
-
-        <div className="flex flex-col gap-1 text-right text-sm text-white/70 sm:text-left">
-          <span>
-            Total Receita: <strong className="finance-income">{new Intl.NumberFormat("pt-BR", {style: "currency", currency: "BRL"}).format(totalIncome)}</strong>
-          </span>
-          <span>
-            Total Despesa: <strong className="finance-expense">{new Intl.NumberFormat("pt-BR", {style: "currency", currency: "BRL"}).format(totalExpenses)}</strong>
-          </span>
-        </div>
-      </div>
-
-      <div className="mt-6 overflow-x-auto">
+      <div className="mt-4 overflow-x-auto">
         <div className="grid gap-4 transactions-chart__bars">
           {chartPoints.map((point) => {
             const incomeHeight = Math.round((point.income / maxValue) * 100);
-            const expenseHeight = Math.round((point.expenses / maxValue) * 100);
+            const expenseHeight = Math.round(
+              (point.expenses / maxValue) * 100,
+            );
 
             return (
               <div key={point.month} className="transactions-chart__column">
-                <div className="flex h-40 flex-col justify-end gap-2">
+                <div className="flex h-28 flex-col justify-end gap-1.5 sm:h-32">
                   <div
                     className="transactions-chart__bar transactions-chart__bar--income"
                     style={{ height: `${incomeHeight}%` }}
-                    title={`Receita ${point.label}: ${new Intl.NumberFormat("pt-BR", {style: "currency", currency: "BRL"}).format(point.income)}`}
+                    title={`Receita ${point.label}: ${currencyFormatter.format(point.income)}`}
                   />
 
                   <div
                     className="transactions-chart__bar transactions-chart__bar--expense"
                     style={{ height: `${expenseHeight}%` }}
-                    title={`Despesa ${point.label}: ${new Intl.NumberFormat("pt-BR", {style: "currency", currency: "BRL"}).format(point.expenses)}`}
+                    title={`Despesa ${point.label}: ${currencyFormatter.format(point.expenses)}`}
                   />
                 </div>
 
@@ -310,6 +294,33 @@ export function TransactionsChart({
               </div>
             );
           })}
+        </div>
+      </div>
+
+      <div className="transactions-chart__footer">
+        <label className="inline-flex cursor-pointer items-center gap-2 text-xs font-medium text-white/62">
+          <input
+            type="checkbox"
+            checked={includePending}
+            onChange={(event) => setIncludePending(event.target.checked)}
+            className="h-4 w-4 rounded border-white/20 bg-black text-white"
+          />
+          Incluir pendentes
+        </label>
+
+        <div className="transactions-chart__totals">
+          <span>
+            Receita{" "}
+            <strong className="finance-income">
+              {currencyFormatter.format(totalIncome)}
+            </strong>
+          </span>
+          <span>
+            Despesa{" "}
+            <strong className="finance-expense">
+              {currencyFormatter.format(totalExpenses)}
+            </strong>
+          </span>
         </div>
       </div>
     </article>

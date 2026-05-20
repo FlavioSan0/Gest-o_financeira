@@ -6,7 +6,11 @@
     "dev": "next dev",
     "build": "next build",
     "start": "next start",
-    "lint": "eslint"
+    "lint": "eslint",
+    "capacitor:init": "npx cap init Quebrei com.sannode.quebrei --web-dir=public",
+    "capacitor:add:android": "npx cap add android",
+    "capacitor:sync:android": "npx cap sync android",
+    "capacitor:open:android": "npx cap open android"
   },
   "dependencies": {
     "@capacitor/cli": "^8.3.4",
@@ -25,6 +29,7 @@
     "tailwind-merge": "^3.6.0"
   },
   "devDependencies": {
+    "@capacitor/android": "^8.3.4",
     "@tailwindcss/postcss": "^4",
     "@types/node": "^20",
     "@types/pg": "^8.20.0",

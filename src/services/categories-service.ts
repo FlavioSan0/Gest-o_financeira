@@ -1,29 +1,12 @@
+import { unstable_cache } from "next/cache";
+import { familyCacheTags } from "@/lib/cache-tags";
 import { prisma } from "@/lib/prisma";
+import { requireSession } from "@/lib/session";
 
-export async function getCategoriesPageData() {
-  const family = await prisma.family.findFirst({
-    where: {
-      name: "Flávio & Ana",
-    },
-  });
-
-  if (!family) {
-    return {
-      familyId: "",
-      categories: [],
-      summary: {
-        total: 0,
-        income: 0,
-        expense: 0,
-        active: 0,
-        inactive: 0,
-      },
-    };
-  }
-
+async function getCategoriesPageDataForFamily(familyId: string) {
   const categories = await prisma.category.findMany({
     where: {
-      familyId: family.id,
+      familyId,
     },
     orderBy: [
       {
@@ -36,6 +19,14 @@ export async function getCategoriesPageData() {
         name: "asc",
       },
     ],
+    select: {
+      id: true,
+      name: true,
+      type: true,
+      color: true,
+      icon: true,
+      active: true,
+    },
   });
 
   const income = categories.filter((category) => category.type === "INCOME");
@@ -44,7 +35,7 @@ export async function getCategoriesPageData() {
   const inactive = categories.filter((category) => !category.active);
 
   return {
-    familyId: family.id,
+    familyId,
     categories: categories.map((category) => ({
       id: category.id,
       name: category.name,
@@ -63,10 +54,27 @@ export async function getCategoriesPageData() {
   };
 }
 
+export async function getCategoriesPageData() {
+  const session = await requireSession();
+  const tags = familyCacheTags(session.familyId);
+
+  return unstable_cache(
+    getCategoriesPageDataForFamily,
+    ["categories-page", session.familyId],
+    {
+      revalidate: 60,
+      tags: [tags.categories, tags.options],
+    },
+  )(session.familyId);
+}
+
 export async function getCategoryForEdit(id: string) {
-  const category = await prisma.category.findUnique({
+  const session = await requireSession();
+
+  const category = await prisma.category.findFirst({
     where: {
       id,
+      familyId: session.familyId,
     },
     select: {
       id: true,
