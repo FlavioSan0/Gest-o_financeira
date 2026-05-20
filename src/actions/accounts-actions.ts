@@ -97,10 +97,6 @@ export async function createAccountAction(formData: FormData) {
   }
 
   revalidateAccountsDependencies();
-
-  return {
-    success: true,
-  };
 }
 
 export async function toggleAccountStatusAction(accountId: string) {

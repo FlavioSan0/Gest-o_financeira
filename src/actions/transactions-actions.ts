@@ -41,7 +41,7 @@ type TransactionCreateInput = {
   description: string;
   amount: number;
   transactionDate: Date;
-  dueDate: Date;
+  dueDate: Date | null;
   status: TransactionStatus;
   paymentMethod: PaymentMethod;
   notes: string | null;
@@ -272,7 +272,7 @@ function buildTransactions(input: {
   description: string;
   amount: number;
   transactionDate: Date;
-  dueDate: Date;
+  dueDate: Date | null;
   status: TransactionStatus;
   paymentMethod: PaymentMethod;
   notes: string | null;
@@ -314,7 +314,9 @@ function buildTransactions(input: {
 
   return Array.from({ length: safeQuantity }, (_, index) => {
     const installmentNumber = index + 1;
-    const occurrenceDueDate = addMonths(input.dueDate, index);
+    const occurrenceDueDate = input.dueDate
+      ? addMonths(input.dueDate, index)
+      : null;
 
     const metadata = [
       `REPETICAO_ID:${repetitionId}`,
@@ -355,7 +357,11 @@ export async function createTransactionAction(formData: FormData) {
   const amount = parseCurrencyValue(getRequiredValue(formData, "amount"));
   const transactionDate = getRequiredValue(formData, "transactionDate");
 
-  const dueDateValue = getOptionalValue(formData, "dueDate") ?? transactionDate;
+  const hasDueDate = getOptionalValue(formData, "hasDueDate") === "on";
+  const dueDateValue =
+    type === "EXPENSE" && hasDueDate
+      ? getRequiredValue(formData, "dueDate")
+      : null;
 
   const rawPaymentMethod = getOptionalValue(formData, "paymentMethod") ?? "PIX";
   const paymentMethod = rawPaymentMethod as PaymentMethod;
@@ -399,7 +405,7 @@ export async function createTransactionAction(formData: FormData) {
       description,
       amount,
       transactionDate: createDateFromInput(transactionDate),
-      dueDate: createDateFromInput(dueDateValue),
+      dueDate: dueDateValue ? createDateFromInput(dueDateValue) : null,
       status,
       paymentMethod,
       notes,
@@ -464,7 +470,7 @@ export async function updateTransactionAction(formData: FormData) {
   const description = getRequiredValue(formData, "description");
   const amount = parseCurrencyValue(getRequiredValue(formData, "amount"));
   const transactionDate = getRequiredValue(formData, "transactionDate");
-  const dueDateValue = getOptionalValue(formData, "dueDate") ?? transactionDate;
+  const dueDateValue = getOptionalValue(formData, "dueDate");
 
   const rawPaymentMethod = getOptionalValue(formData, "paymentMethod") ?? "PIX";
   const paymentMethod = rawPaymentMethod as PaymentMethod;
@@ -521,7 +527,7 @@ export async function updateTransactionAction(formData: FormData) {
         description,
         amount,
         transactionDate: createDateFromInput(transactionDate),
-        dueDate: createDateFromInput(dueDateValue),
+        dueDate: dueDateValue ? createDateFromInput(dueDateValue) : null,
         status,
         paymentMethod,
         notes,

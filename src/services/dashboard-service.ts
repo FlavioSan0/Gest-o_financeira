@@ -1,5 +1,6 @@
 import { prisma } from "@/lib/prisma";
 import { formatCurrency } from "@/lib/utils";
+import { requireSession } from "@/lib/session";
 
 type RecentTransaction = {
   id: string;
@@ -13,12 +14,24 @@ type RecentTransaction = {
 };
 
 type ResponsibleSummary = {
-  userId: string;
+  id: string;
   name: string;
   income: string;
   expenses: string;
   balance: string;
   transactionsCount: number;
+};
+
+type ChartTransaction = {
+  id: string;
+  amount: number;
+  type: "INCOME" | "EXPENSE";
+  status: string;
+  transactionDate: string;
+  categoryId: string | null;
+  category: string;
+  responsibleId: string | null;
+  responsible: string;
 };
 
 export type DashboardData = {
@@ -34,6 +47,7 @@ export type DashboardData = {
   expenseTransactionsCount: number;
   recentTransactions: RecentTransaction[];
   responsibleSummaries: ResponsibleSummary[];
+  chartTransactions: ChartTransaction[];
 };
 
 function getCurrentMonthRange() {
@@ -61,11 +75,14 @@ function toNumber(value: unknown) {
 }
 
 export async function getDashboardData(): Promise<DashboardData> {
+  const session = await requireSession();
   const { start, end } = getCurrentMonthRange();
+  const chartStart = new Date(start);
+  chartStart.setMonth(chartStart.getMonth() - 11);
 
-  const family = await prisma.family.findFirst({
+  const family = await prisma.family.findUnique({
     where: {
-      name: "Flávio & Ana",
+      id: session.familyId,
     },
     include: {
       members: {
@@ -93,6 +110,7 @@ export async function getDashboardData(): Promise<DashboardData> {
       expenseTransactionsCount: 0,
       recentTransactions: [],
       responsibleSummaries: [],
+      chartTransactions: [],
     };
   }
 
@@ -107,14 +125,13 @@ export async function getDashboardData(): Promise<DashboardData> {
     goalsAggregate,
     recentTransactions,
     monthTransactions,
+    chartTransactions,
   ] = await Promise.all([
     prisma.transaction.aggregate({
       where: {
         familyId: family.id,
         type: "INCOME",
-        status: {
-          not: "CANCELED",
-        },
+        status: "PAID",
         transactionDate: {
           gte: start,
           lt: end,
@@ -129,9 +146,7 @@ export async function getDashboardData(): Promise<DashboardData> {
       where: {
         familyId: family.id,
         type: "EXPENSE",
-        status: {
-          not: "CANCELED",
-        },
+        status: "PAID",
         transactionDate: {
           gte: start,
           lt: end,
@@ -146,9 +161,7 @@ export async function getDashboardData(): Promise<DashboardData> {
       where: {
         familyId: family.id,
         type: "INCOME",
-        status: {
-          not: "CANCELED",
-        },
+        status: "PAID",
         transactionDate: {
           gte: start,
           lt: end,
@@ -160,9 +173,7 @@ export async function getDashboardData(): Promise<DashboardData> {
       where: {
         familyId: family.id,
         type: "EXPENSE",
-        status: {
-          not: "CANCELED",
-        },
+        status: "PAID",
         transactionDate: {
           gte: start,
           lt: end,
@@ -235,6 +246,26 @@ export async function getDashboardData(): Promise<DashboardData> {
         amount: true,
       },
     }),
+
+    prisma.transaction.findMany({
+      where: {
+        familyId: family.id,
+        status: {
+          in: ["PAID", "PENDING", "OVERDUE"],
+        },
+        transactionDate: {
+          gte: chartStart,
+          lt: end,
+        },
+      },
+      orderBy: {
+        transactionDate: "asc",
+      },
+      include: {
+        category: true,
+        user: true,
+      },
+    }),
   ]);
 
   const incomeTotal = toNumber(incomeAggregate._sum.amount);
@@ -258,7 +289,7 @@ export async function getDashboardData(): Promise<DashboardData> {
     const userBalance = userIncome - userExpenses;
 
     return {
-      userId: member.userId,
+      id: member.userId,
       name: member.user.name === "Ana" ? "Ana Paula" : member.user.name,
       income: formatCurrency(userIncome),
       expenses: formatCurrency(userExpenses),
@@ -266,6 +297,20 @@ export async function getDashboardData(): Promise<DashboardData> {
       transactionsCount: userTransactions.length,
     };
   });
+
+  const mappedChartTransactions: ChartTransaction[] = chartTransactions.map(
+    (transaction) => ({
+      id: transaction.id,
+      amount: Number(transaction.amount),
+      type: transaction.type,
+      status: transaction.status,
+      transactionDate: transaction.transactionDate.toISOString(),
+      categoryId: transaction.category?.id ?? null,
+      category: transaction.category?.name ?? "Sem categoria",
+      responsibleId: transaction.user?.id ?? null,
+      responsible: transaction.user?.name ?? "Não informado",
+    }),
+  );
 
   return {
     monthLabel: getMonthLabel(),
@@ -291,5 +336,6 @@ export async function getDashboardData(): Promise<DashboardData> {
       responsible: transaction.user?.name ?? "Não informado",
     })),
     responsibleSummaries,
+    chartTransactions: mappedChartTransactions,
   };
 }

@@ -65,6 +65,9 @@ export function TransactionFormMobile({
   const [repeatMode, setRepeatMode] = useState<"NONE" | "INSTALLMENT" | "FIXED_MONTHS" | "PROJECT_12_MONTHS">("NONE");
   const [amountMode, setAmountMode] = useState<"PER_INSTALLMENT" | "TOTAL">("PER_INSTALLMENT");
   const [repeatQuantity, setRepeatQuantity] = useState(2);
+  const [amount, setAmount] = useState("");
+  const [status, setStatus] = useState<"PAID" | "PENDING" | "OVERDUE">("PAID");
+  const [hasDueDate, setHasDueDate] = useState(false);
 
   const isCreditCardPayment = isExpense && paymentMethod === "CREDIT_CARD";
   const showQuantityField =
@@ -98,6 +101,10 @@ export function TransactionFormMobile({
       setRepeatQuantity(2);
     }
 
+    if (value === "FIXED_MONTHS") {
+      setRepeatQuantity(12);
+    }
+
     if (value === "PROJECT_12_MONTHS") {
       setAmountMode("PER_INSTALLMENT");
       setRepeatQuantity(12);
@@ -122,6 +129,29 @@ export function TransactionFormMobile({
       ];
 
   const today = new Date().toISOString().slice(0, 10);
+  const [dueDate, setDueDate] = useState(today);
+
+  function formatCurrency(value: number) {
+    return new Intl.NumberFormat("pt-BR", {
+      style: "currency",
+      currency: "BRL",
+    }).format(value);
+  }
+
+  function parseAmountValue(value: string) {
+    const normalized = value.replace(/\./g, "").replace(",", ".");
+    return Number(isNaN(Number(normalized)) ? 0 : Number(normalized));
+  }
+
+  function addMonths(date: Date, months: number) {
+    const result = new Date(date);
+    const day = result.getDate();
+    result.setMonth(result.getMonth() + months);
+    if (result.getDate() !== day) {
+      result.setDate(0);
+    }
+    return result;
+  }
 
   return (
     <form action={createTransactionAction} className="mobile-transaction-form">
@@ -213,6 +243,8 @@ export function TransactionFormMobile({
           <input
             required
             name="amount"
+            value={amount}
+            onChange={(event) => setAmount(event.target.value)}
             placeholder="R$ 0,00"
             inputMode="decimal"
             className="finance-input mobile-form-value-input"
@@ -235,20 +267,34 @@ export function TransactionFormMobile({
 
         {isExpense && (
           <div className="mobile-form-group">
-            <label className="mobile-form-label">Data de vencimento</label>
+            <label className="flex items-center gap-3 mobile-form-label">
+              <input
+                type="checkbox"
+                name="hasDueDate"
+                checked={hasDueDate}
+                onChange={(event) => setHasDueDate(event.target.checked)}
+                className="h-4 w-4 rounded border-white/20 bg-transparent text-white"
+              />
+              Esta despesa tem vencimento
+            </label>
 
-            <input
-              required
-              type="date"
-              name="dueDate"
-              defaultValue={today}
-              className="finance-input"
-            />
+            {hasDueDate && (
+              <>
+                <input
+                  required
+                  type="date"
+                  name="dueDate"
+                  value={dueDate}
+                  onChange={(event) => setDueDate(event.target.value)}
+                  className="finance-input"
+                />
 
-            <p className="mobile-form-helper">
-              Em parcelas ou contas fixas, os próximos vencimentos serão
-              gerados a partir desta data.
-            </p>
+                <p className="mobile-form-helper">
+                  Em parcelas ou contas fixas, os próximos vencimentos serão
+                  gerados a partir desta data.
+                </p>
+              </>
+            )}
           </div>
         )}
 
@@ -256,7 +302,14 @@ export function TransactionFormMobile({
           <div className="mobile-form-group">
             <label className="mobile-form-label">Status</label>
 
-            <select name="status" defaultValue="PAID" className="finance-input">
+            <select
+              name="status"
+              value={status}
+              onChange={(event) =>
+                setStatus(event.target.value as "PAID" | "PENDING" | "OVERDUE")
+              }
+              className="finance-input"
+            >
               <option value="PAID">Pago</option>
               <option value="PENDING">Pendente</option>
               <option value="OVERDUE">Atrasado</option>
@@ -361,10 +414,65 @@ export function TransactionFormMobile({
             )}
 
             {repeatMode !== "NONE" && (
-              <p className="mobile-form-helper text-amber-300">
-                O próximo lançamento será criado como pendente para não alterar o
-                saldo futuro.
-              </p>
+              <>
+                <p className="mobile-form-helper text-amber-300">
+                  O próximo lançamento será criado como pendente para não alterar o
+                  saldo futuro.
+                </p>
+
+                <div className="rounded-3xl border border-white/10 bg-white/5 p-4 text-sm text-white/80">
+                  <p className="font-bold text-white">
+                    {(() => {
+                      const parsedAmount = parseAmountValue(amount);
+                      const actualQuantity =
+                        repeatMode === "PROJECT_12_MONTHS" ? 12 : repeatQuantity;
+                      const perItemValue =
+                        actualQuantity > 0
+                          ? parsedAmount / actualQuantity
+                          : 0;
+
+                      if (repeatMode === "PROJECT_12_MONTHS") {
+                        return "Será criada uma projeção de 12 meses";
+                      }
+
+                      if (amountMode === "TOTAL") {
+                        const label =
+                          repeatMode === "INSTALLMENT"
+                            ? "parcelas"
+                            : "lançamentos";
+                        return `${formatCurrency(parsedAmount)} dividido em ${actualQuantity} ${label} de ${formatCurrency(
+                          perItemValue,
+                        )}`;
+                      }
+
+                      return `${actualQuantity} lançamentos de ${formatCurrency(
+                        parsedAmount,
+                      )}`;
+                    })()}
+                  </p>
+                  <p className="mt-2 text-xs app-faint-text">
+                    Primeiro lançamento:{" "}
+                    {status === "PAID"
+                      ? "Pago"
+                      : status === "PENDING"
+                      ? "Pendente"
+                      : "Atrasado"}
+                    . Próximos: Pendente.
+                  </p>
+                  {hasDueDate && dueDate && (
+                    <p className="mt-2 text-xs app-faint-text">
+                      Vencimento:{" "}
+                      {new Date(dueDate).toLocaleDateString("pt-BR")} até{' '}
+                      {addMonths(
+                        new Date(dueDate),
+                        repeatMode === "PROJECT_12_MONTHS"
+                          ? 11
+                          : repeatQuantity - 1,
+                      ).toLocaleDateString("pt-BR")}
+                    </p>
+                  )}
+                </div>
+              </>
             )}
           </div>
         </section>

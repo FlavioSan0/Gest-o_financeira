@@ -25,10 +25,77 @@ export type TransactionsFilters = {
   status?: TransactionStatusFilter;
   paymentMethod?: PaymentMethodFilter;
   responsibleId?: string;
+  month?: string;
+  year?: string;
 };
 
 function getDisplayName(name: string) {
   return name === "Ana" ? "Ana Paula" : name;
+}
+
+function getCurrentMonth() {
+  return String(new Date().getMonth() + 1).padStart(2, "0");
+}
+
+function getCurrentYear() {
+  return String(new Date().getFullYear());
+}
+
+function getValidMonth(value: string | undefined) {
+  if (value === "ALL") {
+    return "ALL";
+  }
+
+  if (/^(0[1-9]|1[0-2])$/.test(value ?? "")) {
+    return value!;
+  }
+
+  return getCurrentMonth();
+}
+
+function getValidYear(value: string | undefined) {
+  if (/^\d{4}$/.test(value ?? "")) {
+    return value!;
+  }
+
+  return getCurrentYear();
+}
+
+function getDateRange(month: string, year: string) {
+  const parsedYear = Number(year);
+
+  if (month === "ALL") {
+    return {
+      gte: new Date(parsedYear, 0, 1),
+      lt: new Date(parsedYear + 1, 0, 1),
+    };
+  }
+
+  const monthIndex = Number(month) - 1;
+
+  return {
+    gte: new Date(parsedYear, monthIndex, 1),
+    lt: new Date(parsedYear, monthIndex + 1, 1),
+  };
+}
+
+function extractRepeatLabel(notes: string | null | undefined) {
+  const match = notes?.match(/PARCELA:([0-9]+\/[0-9]+)/);
+
+  return match ? match[1] : null;
+}
+
+export function getCleanNotes(notes: string | null | undefined) {
+  const lines = (notes ?? "")
+    .split(/\r?\n/)
+    .map((line) => line.trim())
+    .filter(
+      (line) =>
+        line !== "" &&
+        !/^(REPETICAO_ID:|REPETICAO_TIPO:|PARCELA:|VALOR_MODO:)/.test(line),
+    );
+
+  return lines.join("\n").trim();
 }
 
 export async function getTransactionFormOptions() {
@@ -100,6 +167,9 @@ export async function getTransactionFormOptions() {
 export async function getTransactionsList(filters: TransactionsFilters = {}) {
   const session = await requireSession();
 
+  const month = getValidMonth(filters.month);
+  const year = getValidYear(filters.year);
+
   const family = await prisma.family.findUnique({
     where: {
       id: session.familyId,
@@ -132,17 +202,21 @@ export async function getTransactionsList(filters: TransactionsFilters = {}) {
         status: filters.status ?? "ALL",
         paymentMethod: filters.paymentMethod ?? "ALL",
         responsibleId: filters.responsibleId ?? "ALL",
+        month,
+        year,
       },
       responsibleOptions: [],
     };
   }
+
+  const dateRange = getDateRange(month, year);
 
   const responsibleId =
     filters.responsibleId && filters.responsibleId !== "ALL"
       ? filters.responsibleId
       : undefined;
 
-  const baseWhere = {
+  const summaryBaseWhere = {
     familyId: family.id,
     ...(filters.search
       ? {
@@ -157,21 +231,34 @@ export async function getTransactionsList(filters: TransactionsFilters = {}) {
           type: filters.type,
         }
       : {}),
-    ...(filters.status && filters.status !== "ALL"
-      ? {
-          status: filters.status,
-        }
-      : {}),
     ...(filters.paymentMethod && filters.paymentMethod !== "ALL"
       ? {
           paymentMethod: filters.paymentMethod,
+        }
+      : {}),
+    OR: [
+      {
+        dueDate: dateRange,
+      },
+      {
+        dueDate: null,
+        transactionDate: dateRange,
+      },
+    ],
+  };
+
+  const baseWhere = {
+    ...summaryBaseWhere,
+    ...(filters.status && filters.status !== "ALL"
+      ? {
+          status: filters.status,
         }
       : {}),
   };
 
   const where = {
     ...baseWhere,
-    ...(responsibleId
+    ...(responsibleId && responsibleId !== "CASAL"
       ? {
           userId: responsibleId,
         }
@@ -193,58 +280,55 @@ export async function getTransactionsList(filters: TransactionsFilters = {}) {
     }),
 
     prisma.transaction.findMany({
-      where: baseWhere,
+      where: summaryBaseWhere,
       select: {
         id: true,
         userId: true,
         type: true,
         amount: true,
+        status: true,
       },
     }),
   ]);
 
-  const paidTransactions = transactions.filter(
-  (transaction) => transaction.status === "PAID",
-);
+  const paidSummaryTransactions = summaryBaseTransactions.filter(
+    (transaction) => transaction.status === "PAID",
+  );
 
-const totalIncome = paidTransactions
-  .filter((transaction) => transaction.type === "INCOME")
-  .reduce((acc, transaction) => acc + Number(transaction.amount), 0);
-
-const totalExpense = paidTransactions
-  .filter((transaction) => transaction.type === "EXPENSE")
-  .reduce((acc, transaction) => acc + Number(transaction.amount), 0);
-
-const balance = totalIncome - totalExpense;
-
-  const totalBaseIncome = summaryBaseTransactions
+  const totalIncome = paidSummaryTransactions
     .filter((transaction) => transaction.type === "INCOME")
     .reduce((acc, transaction) => acc + Number(transaction.amount), 0);
 
-  const totalBaseExpense = summaryBaseTransactions
+  const totalExpense = paidSummaryTransactions
     .filter((transaction) => transaction.type === "EXPENSE")
     .reduce((acc, transaction) => acc + Number(transaction.amount), 0);
 
+  const balance = totalIncome - totalExpense;
+
   const responsibleSummaryCards = [
     {
-      id: "ALL",
+      id: "CASAL",
       name: "Casal",
-      income: formatCurrency(totalBaseIncome),
-      expense: formatCurrency(totalBaseExpense),
-      balance: formatCurrency(totalBaseIncome - totalBaseExpense),
+      income: formatCurrency(totalIncome),
+      expense: formatCurrency(totalExpense),
+      balance: formatCurrency(balance),
       transactionsCount: summaryBaseTransactions.length,
       isGeneral: true,
     },
     ...family.members.map((member) => {
-      const memberTransactions = summaryBaseTransactions.filter(
+      const memberAllTransactions = summaryBaseTransactions.filter(
         (transaction) => transaction.userId === member.userId,
       );
 
-      const memberIncome = memberTransactions
+      const memberPaidTransactions = paidSummaryTransactions.filter(
+        (transaction) => transaction.userId === member.userId,
+      );
+
+      const memberIncome = memberPaidTransactions
         .filter((transaction) => transaction.type === "INCOME")
         .reduce((acc, transaction) => acc + Number(transaction.amount), 0);
 
-      const memberExpense = memberTransactions
+      const memberExpense = memberPaidTransactions
         .filter((transaction) => transaction.type === "EXPENSE")
         .reduce((acc, transaction) => acc + Number(transaction.amount), 0);
 
@@ -254,7 +338,7 @@ const balance = totalIncome - totalExpense;
         income: formatCurrency(memberIncome),
         expense: formatCurrency(memberExpense),
         balance: formatCurrency(memberIncome - memberExpense),
-        transactionsCount: memberTransactions.length,
+        transactionsCount: memberAllTransactions.length,
         isGeneral: false,
       };
     }),
@@ -270,7 +354,7 @@ const balance = totalIncome - totalExpense;
       status: transaction.status,
       paymentMethod: transaction.paymentMethod,
       date: new Intl.DateTimeFormat("pt-BR").format(
-        transaction.transactionDate,
+        transaction.dueDate ?? transaction.transactionDate,
       ),
       category: transaction.category?.name ?? "Sem categoria",
       account:
@@ -281,7 +365,8 @@ const balance = totalIncome - totalExpense;
       responsible: transaction.user
         ? getDisplayName(transaction.user.name)
         : "Não informado",
-      notes: transaction.notes,
+      repeatLabel: extractRepeatLabel(transaction.notes),
+      notes: getCleanNotes(transaction.notes),
     })),
     summary: {
       totalIncome: formatCurrency(totalIncome),
@@ -296,11 +381,19 @@ const balance = totalIncome - totalExpense;
       status: filters.status ?? "ALL",
       paymentMethod: filters.paymentMethod ?? "ALL",
       responsibleId: filters.responsibleId ?? "ALL",
+      month,
+      year,
     },
-    responsibleOptions: family.members.map((member) => ({
-      id: member.user.id,
-      name: getDisplayName(member.user.name),
-    })),
+    responsibleOptions: [
+      {
+        id: "CASAL",
+        name: "Casal",
+      },
+      ...family.members.map((member) => ({
+        id: member.user.id,
+        name: getDisplayName(member.user.name),
+      })),
+    ],
   };
 }
 
@@ -338,7 +431,7 @@ export async function getTransactionForEdit(transactionId: string) {
         : "",
       status: transaction.status,
       paymentMethod: transaction.paymentMethod,
-      notes: transaction.notes ?? "",
+      notes: getCleanNotes(transaction.notes),
     },
   };
 }

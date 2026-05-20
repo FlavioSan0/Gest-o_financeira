@@ -11,18 +11,12 @@ export function DashboardHero({ monthLabel, balance }: DashboardHeroProps) {
       <article className="app-card overflow-hidden p-6">
         <div className="flex flex-col justify-between gap-8 md:flex-row md:items-end">
           <div>
-            <div className="finance-badge border border-white/10 bg-white/6 text-white/70">
-              <ShieldCheck className="h-4 w-4 text-white" />
-              Controle compartilhado e organizado
-            </div>
-
             <h2 className="dashboard-hero-title mt-5">
-              Seu controle financeiro em um só lugar.
+              Visão geral do mês
             </h2>
 
             <p className="dashboard-hero-description">
-              Acompanhe entradas, despesas, cartões, contas fixas e objetivos
-              financeiros com uma visão clara para você e sua esposa.
+              Resumo objetivo com valores PAID e filtros rápidos.
             </p>
           </div>
 

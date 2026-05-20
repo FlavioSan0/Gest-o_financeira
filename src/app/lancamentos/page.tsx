@@ -12,6 +12,8 @@ type TransactionsPageProps = {
     status?: string;
     paymentMethod?: string;
     responsibleId?: string;
+    month?: string;
+    year?: string;
   }>;
 };
 
@@ -54,6 +56,26 @@ function normalizePaymentMethod(
   return "ALL";
 }
 
+function normalizeMonth(value?: string) {
+  if (value === "ALL") {
+    return "ALL";
+  }
+
+  if (/^(0[1-9]|1[0-2])$/.test(value ?? "")) {
+    return value!;
+  }
+
+  return String(new Date().getMonth() + 1).padStart(2, "0");
+}
+
+function normalizeYear(value?: string) {
+  if (/^\d{4}$/.test(value ?? "")) {
+    return value!;
+  }
+
+  return String(new Date().getFullYear());
+}
+
 function normalizeResponsibleId(value?: string) {
   if (!value || value.trim() === "") {
     return "ALL";
@@ -73,6 +95,8 @@ export default async function TransactionsPage({
     status: normalizeStatus(params.status),
     paymentMethod: normalizePaymentMethod(params.paymentMethod),
     responsibleId: normalizeResponsibleId(params.responsibleId),
+    month: normalizeMonth(params.month),
+    year: normalizeYear(params.year),
   };
 
   const data = await getTransactionsList(filters);

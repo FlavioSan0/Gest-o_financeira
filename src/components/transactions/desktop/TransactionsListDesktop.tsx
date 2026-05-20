@@ -33,6 +33,7 @@ type TransactionItem = {
   account: string;
   responsible: string;
   notes: string | null;
+  repeatLabel?: string | null;
 };
 
 type ResponsibleOption = {
@@ -65,6 +66,8 @@ type TransactionsListDesktopProps = {
     status: string;
     paymentMethod: string;
     responsibleId: string;
+    month: string;
+    year: string;
   };
   responsibleOptions: ResponsibleOption[];
 };
@@ -282,6 +285,12 @@ export function TransactionsListDesktop({
                       <span className={getStatusClassName(transaction.status)}>
                         {getStatusLabel(transaction.status)}
                       </span>
+
+                      {transaction.repeatLabel && (
+                        <span className="finance-badge border border-white/10 bg-white/5 text-white/70">
+                          {transaction.repeatLabel}
+                        </span>
+                      )}
                     </div>
 
                     <div className="mt-3 flex flex-wrap gap-x-4 gap-y-2 text-xs app-faint-text">

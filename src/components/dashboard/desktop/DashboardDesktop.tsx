@@ -3,6 +3,7 @@ import { MonthlyOverview } from "@/components/dashboard/MonthlyOverview";
 import { RecentTransactions } from "@/components/dashboard/RecentTransactions";
 import { ResponsibleOverview } from "@/components/dashboard/ResponsibleOverview";
 import { SummaryCard } from "@/components/dashboard/SummaryCard";
+import { TransactionsChart } from "@/components/dashboard/TransactionsChart";
 
 import {
   ArrowDownCircle,
@@ -22,6 +23,17 @@ type DashboardData = {
   activeGoalsCount: number;
   pendingBillsCount: number;
   activeCardsCount: number;
+  chartTransactions: {
+    id: string;
+    amount: number;
+    type: "INCOME" | "EXPENSE";
+    status: string;
+    transactionDate: string;
+    categoryId: string | null;
+    category: string;
+    responsibleId: string | null;
+    responsible: string;
+  }[];
   responsibleSummaries: {
     id: string;
     name: string;
@@ -35,9 +47,9 @@ type DashboardData = {
     description: string;
     amount: string;
     type: "INCOME" | "EXPENSE";
+    status: string;
     date: string;
     category: string;
-    account: string;
     responsible: string;
   }[];
 };
@@ -51,34 +63,34 @@ export function DashboardDesktop({ dashboard }: DashboardDesktopProps) {
     {
       title: "Saldo previsto",
       value: dashboard.balance,
-      description: "Entradas menos saídas do mês",
+      description: "Saldo com valores PAID do mês",
       icon: Wallet,
-      detail: "Atualizado em tempo real",
+      detail: "Resumo financeiro direto",
       valueClassName: "text-white",
     },
     {
-      title: "Entradas",
+      title: "Receita",
       value: dashboard.income,
-      description: "Receitas registradas",
+      description: "Receitas PAID",
       icon: ArrowUpCircle,
       detail: `${dashboard.incomeTransactionsCount} lançamentos`,
       valueClassName: "finance-income",
     },
     {
-      title: "Saídas",
+      title: "Despesa",
       value: dashboard.expenses,
-      description: "Despesas registradas",
+      description: "Despesas PAID",
       icon: ArrowDownCircle,
       detail: `${dashboard.expenseTransactionsCount} lançamentos`,
       valueClassName: "finance-expense",
     },
     {
-      title: "Metas",
-      value: dashboard.goalsTotal,
-      description: "Valor reservado até agora",
+      title: "Pendentes",
+      value: `${dashboard.pendingBillsCount}`,
+      description: "Contas aguardando pagamento",
       icon: PiggyBank,
-      detail: `${dashboard.activeGoalsCount} metas ativas`,
-      valueClassName: "finance-goal",
+      detail: "Apenas pendências ativas",
+      valueClassName: "text-white",
     },
   ];
 
@@ -94,6 +106,11 @@ export function DashboardDesktop({ dashboard }: DashboardDesktopProps) {
           <SummaryCard key={card.title} {...card} />
         ))}
       </section>
+
+      <TransactionsChart
+        chartTransactions={dashboard.chartTransactions}
+        responsibleSummaries={dashboard.responsibleSummaries}
+      />
 
       <ResponsibleOverview
         totalBalance={dashboard.balance}

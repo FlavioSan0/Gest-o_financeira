@@ -1,13 +1,11 @@
 import Link from "next/link";
 import {
   ArrowDownCircle,
-  ArrowRight,
   ArrowUpCircle,
   CalendarDays,
   CreditCard,
   Pencil,
   Plus,
-  ReceiptText,
   Search,
   UserRound,
   Wallet,
@@ -34,6 +32,7 @@ type TransactionItem = {
   account: string;
   responsible: string;
   notes: string | null;
+  repeatLabel?: string | null;
 };
 
 type ResponsibleOption = {
@@ -66,6 +65,8 @@ type TransactionsListMobileProps = {
     status: string;
     paymentMethod: string;
     responsibleId: string;
+    month: string;
+    year: string;
   };
   responsibleOptions: ResponsibleOption[];
 };
@@ -134,6 +135,14 @@ function buildTransactionsHref(
     params.set("responsibleId", nextFilters.responsibleId);
   }
 
+  if (nextFilters.month && nextFilters.month !== "ALL") {
+    params.set("month", nextFilters.month);
+  }
+
+  if (nextFilters.year) {
+    params.set("year", nextFilters.year);
+  }
+
   const query = params.toString();
 
   return query ? `/lancamentos?${query}` : "/lancamentos";
@@ -161,6 +170,12 @@ export function TransactionsListMobile({
   responsibleOptions,
 }: TransactionsListMobileProps) {
   const hasTransactions = transactions.length > 0;
+  const currentYear = new Date().getFullYear();
+  const yearOptions = [currentYear - 1, currentYear, currentYear + 1];
+
+  if (!yearOptions.map(String).includes(filters.year)) {
+    yearOptions.unshift(Number(filters.year));
+  }
   const generalCard = responsibleSummaryCards.find((card) => card.isGeneral);
   const individualCards = responsibleSummaryCards.filter(
     (card) => !card.isGeneral,
@@ -268,6 +283,8 @@ export function TransactionsListMobile({
         <form action="/lancamentos" className="mobile-filter-selects">
           <input type="hidden" name="search" value={filters.search} />
           <input type="hidden" name="type" value={filters.type} />
+          <input type="hidden" name="month" value={filters.month} />
+          <input type="hidden" name="year" value={filters.year} />
 
           <div>
             <label>Status</label>
@@ -317,6 +334,46 @@ export function TransactionsListMobile({
               {responsibleOptions.map((responsible) => (
                 <option key={responsible.id} value={responsible.id}>
                   {responsible.name}
+                </option>
+              ))}
+            </select>
+          </div>
+
+          <div>
+            <label>Mês</label>
+
+            <select
+              name="month"
+              defaultValue={filters.month}
+              className="finance-input"
+            >
+              <option value="ALL">Todos os meses</option>
+              <option value="01">Jan</option>
+              <option value="02">Fev</option>
+              <option value="03">Mar</option>
+              <option value="04">Abr</option>
+              <option value="05">Mai</option>
+              <option value="06">Jun</option>
+              <option value="07">Jul</option>
+              <option value="08">Ago</option>
+              <option value="09">Set</option>
+              <option value="10">Out</option>
+              <option value="11">Nov</option>
+              <option value="12">Dez</option>
+            </select>
+          </div>
+
+          <div>
+            <label>Ano</label>
+
+            <select
+              name="year"
+              defaultValue={filters.year}
+              className="finance-input"
+            >
+              {yearOptions.map((year) => (
+                <option key={year} value={String(year)}>
+                  {year}
                 </option>
               ))}
             </select>
@@ -414,6 +471,12 @@ export function TransactionsListMobile({
                       <strong>{transaction.description}</strong>
                       <span>{getStatusLabel(transaction.status)}</span>
                     </div>
+
+                    {transaction.repeatLabel && (
+                      <span className="mobile-transaction-row__tag">
+                        {transaction.repeatLabel}
+                      </span>
+                    )}
 
                     <div className="mobile-transaction-row__meta">
                       <span>

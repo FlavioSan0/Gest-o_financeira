@@ -1,4 +1,4 @@
-import Link from "next/link";
+﻿import Link from "next/link";
 import { UserRound, UsersRound, WalletCards } from "lucide-react";
 
 type ResponsibleSummary = {
@@ -53,14 +53,9 @@ export function ResponsibleOverview({
       </Link>
 
       <div className="responsible-card-list">
-        {responsibleSummaries.map((summary, index) => {
-          const responsibleKey = summary.id
-            ? `${summary.id}-${summary.name}`
-            : `responsible-${index}-${summary.name}`;
-
-          const responsibleHref = summary.id
-            ? `/lancamentos?responsibleId=${summary.id}`
-            : "/lancamentos";
+        {responsibleSummaries.map((summary) => {
+          const responsibleKey = `${summary.id}-${summary.name}`;
+          const responsibleHref = `/lancamentos?responsibleId=${summary.id}`;
 
           return (
             <Link
@@ -91,19 +86,14 @@ export function ResponsibleOverview({
 
                 <div>
                   <span>Saídas</span>
-                  <strong className="finance-expense">
-                    {summary.expenses}
-                  </strong>
+                  <strong className="finance-expense">{summary.expenses}</strong>
                 </div>
               </div>
 
               <div className="responsible-card__footer">
                 <WalletCards className="h-4 w-4" />
                 <span>
-                  {summary.transactionsCount}{" "}
-                  {summary.transactionsCount === 1
-                    ? "lançamento"
-                    : "lançamentos"}
+                  {summary.transactionsCount} {summary.transactionsCount === 1 ? "lançamento" : "lançamentos"}
                 </span>
               </div>
             </Link>

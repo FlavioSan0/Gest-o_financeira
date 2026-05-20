@@ -13,6 +13,8 @@ type TransactionsFiltersProps = {
     status: string;
     paymentMethod: string;
     responsibleId: string;
+    month: string;
+    year: string;
   };
   responsibleOptions: ResponsibleOption[];
 };
@@ -21,6 +23,13 @@ export function TransactionsFilters({
   filters,
   responsibleOptions,
 }: TransactionsFiltersProps) {
+  const currentYear = new Date().getFullYear();
+  const yearOptions = [currentYear - 1, currentYear, currentYear + 1];
+
+  if (!yearOptions.map(String).includes(filters.year)) {
+    yearOptions.unshift(Number(filters.year));
+  }
+
   return (
     <form className="app-card p-5" action="/lancamentos">
       <div className="grid gap-4 xl:grid-cols-[1.2fr_0.65fr_0.65fr_0.75fr_0.75fr_auto] xl:items-end">
@@ -51,6 +60,50 @@ export function TransactionsFilters({
             <option value="ALL">Todos</option>
             <option value="INCOME">Entradas</option>
             <option value="EXPENSE">Saídas</option>
+          </select>
+        </div>
+
+        <div>
+          <label className="mb-2 block text-sm font-bold text-white">
+            Mês
+          </label>
+
+          <select
+            name="month"
+            defaultValue={filters.month}
+            className="finance-input"
+          >
+            <option value="ALL">Todos os meses</option>
+            <option value="01">Jan</option>
+            <option value="02">Fev</option>
+            <option value="03">Mar</option>
+            <option value="04">Abr</option>
+            <option value="05">Mai</option>
+            <option value="06">Jun</option>
+            <option value="07">Jul</option>
+            <option value="08">Ago</option>
+            <option value="09">Set</option>
+            <option value="10">Out</option>
+            <option value="11">Nov</option>
+            <option value="12">Dez</option>
+          </select>
+        </div>
+
+        <div>
+          <label className="mb-2 block text-sm font-bold text-white">
+            Ano
+          </label>
+
+          <select
+            name="year"
+            defaultValue={filters.year}
+            className="finance-input"
+          >
+            {yearOptions.map((year) => (
+              <option key={year} value={String(year)}>
+                {year}
+              </option>
+            ))}
           </select>
         </div>
 

@@ -20,6 +20,7 @@ type TransactionItem = {
   category: string;
   account: string;
   responsible: string;
+  repeatLabel?: string | null;
   notes: string | null;
 };
 
@@ -53,6 +54,8 @@ type TransactionsListProps = {
     status: string;
     paymentMethod: string;
     responsibleId: string;
+    month: string;
+    year: string;
   };
   responsibleOptions: ResponsibleOption[];
 };

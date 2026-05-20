@@ -26,11 +26,12 @@ export function TransactionsResponsibleSummary({
         const Icon = card.isGeneral ? UsersRound : UserRound;
         const isActive =
           activeResponsibleId === card.id ||
-          (activeResponsibleId === "ALL" && card.id === "ALL");
+          ((activeResponsibleId === "ALL" || activeResponsibleId === "CASAL") &&
+            card.id === "CASAL");
 
         const href =
-          card.id === "ALL"
-            ? "/lancamentos"
+          card.id === "CASAL"
+            ? "/lancamentos?responsibleId=CASAL"
             : `/lancamentos?responsibleId=${card.id}`;
 
         return (

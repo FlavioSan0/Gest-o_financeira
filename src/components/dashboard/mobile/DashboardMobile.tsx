@@ -12,6 +12,7 @@ import {
   UsersRound,
   Wallet,
 } from "lucide-react";
+import { TransactionsChart } from "@/components/dashboard/TransactionsChart";
 
 type DashboardData = {
   monthLabel: string;
@@ -24,6 +25,17 @@ type DashboardData = {
   activeGoalsCount: number;
   pendingBillsCount: number;
   activeCardsCount: number;
+  chartTransactions: {
+    id: string;
+    amount: number;
+    type: "INCOME" | "EXPENSE";
+    status: string;
+    transactionDate: string;
+    categoryId: string | null;
+    category: string;
+    responsibleId: string | null;
+    responsible: string;
+  }[];
   responsibleSummaries: {
     id: string;
     name: string;
@@ -37,9 +49,9 @@ type DashboardData = {
     description: string;
     amount: string;
     type: "INCOME" | "EXPENSE";
+    status: string;
     date: string;
     category: string;
-    account: string;
     responsible: string;
   }[];
 };
@@ -87,6 +99,11 @@ export function DashboardMobile({ dashboard }: DashboardMobileProps) {
           </div>
         </div>
       </section>
+
+      <TransactionsChart
+        chartTransactions={dashboard.chartTransactions}
+        responsibleSummaries={dashboard.responsibleSummaries}
+      />
 
       <section className="mobile-quick-actions">
         <Link href="/lancamentos/novo" className="mobile-quick-action">
