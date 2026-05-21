@@ -46,6 +46,11 @@ type TransactionEditData = {
   status: "PAID" | "PENDING" | "OVERDUE" | "CANCELED";
   paymentMethod: PaymentMethod;
   notes: string;
+  series: {
+    repetitionId: string;
+    currentInstallment: number;
+    totalInstallments: number;
+  } | null;
 };
 
 type TransactionEditFormProps = {

@@ -1,6 +1,6 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { type FormEvent, useMemo, useRef, useState } from "react";
 import Link from "next/link";
 import { ArrowLeft, Save } from "lucide-react";
 import { updateTransactionAction } from "@/actions/transactions-actions";
@@ -50,6 +50,11 @@ type TransactionEditData = {
   status: "PAID" | "PENDING" | "OVERDUE" | "CANCELED";
   paymentMethod: PaymentMethod;
   notes: string;
+  series: {
+    repetitionId: string;
+    currentInstallment: number;
+    totalInstallments: number;
+  } | null;
 };
 
 type TransactionEditFormDesktopProps = {
@@ -67,6 +72,10 @@ export function TransactionEditFormDesktop({
   creditCards,
   defaultType,
 }: TransactionEditFormDesktopProps) {
+  const formRef = useRef<HTMLFormElement>(null);
+  const editModeInputRef = useRef<HTMLInputElement>(null);
+  const confirmedSubmitRef = useRef(false);
+  const [showSeriesDialog, setShowSeriesDialog] = useState(false);
   const [transactionType, setTransactionType] = useState<TransactionType>(
     defaultType ?? transaction.type,
   );
@@ -114,10 +123,41 @@ export function TransactionEditFormDesktop({
     }
   }
 
+  function handleSubmit(event: FormEvent<HTMLFormElement>) {
+    if (transaction.series && !confirmedSubmitRef.current) {
+      event.preventDefault();
+      setShowSeriesDialog(true);
+      return;
+    }
+
+    confirmedSubmitRef.current = false;
+  }
+
+  function submitWithEditMode(mode: "single" | "future") {
+    if (editModeInputRef.current) {
+      editModeInputRef.current.value = mode;
+    }
+
+    confirmedSubmitRef.current = true;
+    setShowSeriesDialog(false);
+    formRef.current?.requestSubmit();
+  }
+
   return (
-    <form action={updateTransactionAction} className="grid gap-6">
+    <form
+      ref={formRef}
+      action={updateTransactionAction}
+      onSubmit={handleSubmit}
+      className="grid gap-6"
+    >
       <input type="hidden" name="transactionId" value={transaction.id} />
       <input type="hidden" name="type" value={transactionType} />
+      <input
+        ref={editModeInputRef}
+        type="hidden"
+        name="editMode"
+        value="single"
+      />
 
       {isIncome && <input type="hidden" name="status" value="PAID" />}
 
@@ -249,10 +289,9 @@ export function TransactionEditFormDesktop({
                 </label>
 
                 <input
-                  required
                   type="date"
                   name="dueDate"
-                  defaultValue={transaction.dueDate || transaction.transactionDate}
+                  defaultValue={transaction.dueDate}
                   className="finance-input"
                 />
               </div>
@@ -399,6 +438,52 @@ export function TransactionEditFormDesktop({
           </div>
         </div>
       </section>
+
+      {showSeriesDialog && transaction.series ? (
+        <div className="fixed inset-0 z-[120] flex items-center justify-center bg-black/70 px-4 backdrop-blur-sm">
+          <div className="w-full max-w-md rounded-[2rem] border border-white/10 bg-[#050816] p-5 shadow-2xl shadow-black/60">
+            <p className="text-sm font-bold text-cyan-200">
+              Parcela {transaction.series.currentInstallment}/
+              {transaction.series.totalInstallments}
+            </p>
+
+            <h3 className="mt-2 text-xl font-black tracking-[-0.03em] text-white">
+              Como deseja editar?
+            </h3>
+
+            <p className="mt-2 text-sm leading-6 app-muted-text">
+              Este lançamento faz parte de uma série. Você pode alterar apenas
+              esta parcela ou aplicar nos próximos lançamentos da mesma série.
+            </p>
+
+            <div className="mt-5 grid gap-3">
+              <button
+                type="button"
+                onClick={() => submitWithEditMode("single")}
+                className="app-button-primary w-full"
+              >
+                Somente este
+              </button>
+
+              <button
+                type="button"
+                onClick={() => submitWithEditMode("future")}
+                className="app-button-secondary w-full"
+              >
+                Este e próximos
+              </button>
+
+              <button
+                type="button"
+                onClick={() => setShowSeriesDialog(false)}
+                className="rounded-2xl border border-white/10 bg-black/25 px-4 py-3 text-sm font-extrabold text-white/60 transition hover:bg-white/5 hover:text-white"
+              >
+                Cancelar
+              </button>
+            </div>
+          </div>
+        </div>
+      ) : null}
     </form>
   );
 }

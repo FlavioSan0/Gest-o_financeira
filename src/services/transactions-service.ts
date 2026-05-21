@@ -87,6 +87,38 @@ function extractRepeatLabel(notes: string | null | undefined) {
   return match ? match[1] : null;
 }
 
+function getRepeatMetadataTokens(notes: string | null | undefined) {
+  return (notes ?? "")
+    .split(/\r?\n|;/)
+    .map((line) => line.trim())
+    .filter((line) =>
+      /^(REPETICAO_ID:|REPETICAO_TIPO:|PARCELA:|VALOR_MODO:)/.test(line),
+    );
+}
+
+function extractRepeatMetadata(notes: string | null | undefined) {
+  const metadataTokens = getRepeatMetadataTokens(notes);
+  const repetitionId = metadataTokens
+    .find((line) => line.startsWith("REPETICAO_ID:"))
+    ?.replace("REPETICAO_ID:", "")
+    .trim();
+  const installment = metadataTokens
+    .find((line) => line.startsWith("PARCELA:"))
+    ?.replace("PARCELA:", "")
+    .trim();
+  const installmentMatch = installment?.match(/^(\d+)\/(\d+)$/);
+
+  if (!repetitionId || !installmentMatch) {
+    return null;
+  }
+
+  return {
+    repetitionId,
+    currentInstallment: Number(installmentMatch[1]),
+    totalInstallments: Number(installmentMatch[2]),
+  };
+}
+
 export function getCleanNotes(notes: string | null | undefined) {
   const lines = (notes ?? "")
     .split(/\r?\n/)
@@ -500,6 +532,7 @@ export async function getTransactionForEdit(transactionId: string) {
       status: transaction.status,
       paymentMethod: transaction.paymentMethod,
       notes: getCleanNotes(transaction.notes),
+      series: extractRepeatMetadata(transaction.notes),
     },
   };
 }

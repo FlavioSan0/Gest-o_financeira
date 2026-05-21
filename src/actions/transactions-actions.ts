@@ -271,6 +271,66 @@ function buildNotesWithMetadata(
   return `${cleanNotes}\n\n${metadata.join(";")}`;
 }
 
+function getRepeatMetadataTokens(notes: string | null | undefined) {
+  return (notes ?? "")
+    .split(/\r?\n|;/)
+    .map((line) => line.trim())
+    .filter((line) =>
+      /^(REPETICAO_ID:|REPETICAO_TIPO:|PARCELA:|VALOR_MODO:)/.test(line),
+    );
+}
+
+function getRepeatMetadata(notes: string | null | undefined) {
+  const metadataTokens = getRepeatMetadataTokens(notes);
+  const repetitionId = metadataTokens
+    .find((line) => line.startsWith("REPETICAO_ID:"))
+    ?.replace("REPETICAO_ID:", "")
+    .trim();
+  const installment = metadataTokens
+    .find((line) => line.startsWith("PARCELA:"))
+    ?.replace("PARCELA:", "")
+    .trim();
+  const installmentMatch = installment?.match(/^(\d+)\/(\d+)$/);
+
+  if (!repetitionId || !installmentMatch) {
+    return null;
+  }
+
+  return {
+    repetitionId,
+    installmentNumber: Number(installmentMatch[1]),
+    totalInstallments: Number(installmentMatch[2]),
+    metadataTokens,
+  };
+}
+
+function buildNotesPreservingMetadata(
+  userNotes: string | null,
+  metadataTokens: string[],
+) {
+  return buildNotesWithMetadata(userNotes, metadataTokens);
+}
+
+function getSeriesEditMode(value: string | null) {
+  return value === "future" ? "future" : "single";
+}
+
+function buildSeriesDescription(
+  description: string,
+  currentInstallmentLabel: string,
+  targetInstallmentLabel: string,
+) {
+  if (description.endsWith(` ${currentInstallmentLabel}`)) {
+    return `${description.slice(0, -currentInstallmentLabel.length).trim()} ${targetInstallmentLabel}`;
+  }
+
+  if (/\s+\d+\/\d+$/.test(description)) {
+    return description.replace(/\s+\d+\/\d+$/, ` ${targetInstallmentLabel}`);
+  }
+
+  return description;
+}
+
 function buildTransactions(input: {
   familyId: string;
   userId: string;
@@ -475,6 +535,7 @@ export async function updateTransactionAction(formData: FormData) {
   const session = await requireSession();
 
   const transactionId = getRequiredValue(formData, "transactionId");
+  const editMode = getSeriesEditMode(getOptionalValue(formData, "editMode"));
   const type = getRequiredValue(formData, "type") as TransactionType;
   const description = getRequiredValue(formData, "description");
   const amount = parseCurrencyValue(getRequiredValue(formData, "amount"));
@@ -501,13 +562,14 @@ export async function updateTransactionAction(formData: FormData) {
     "PAID") as TransactionStatus;
 
   await prisma.$transaction(async () => {
-    const oldTransaction = await prisma.transaction.findUnique({
+    const oldTransaction = await prisma.transaction.findFirst({
       where: {
         id: transactionId,
+        familyId: session.familyId,
       },
     });
 
-    if (!oldTransaction || oldTransaction.familyId !== session.familyId) {
+    if (!oldTransaction) {
       throw new Error("Lançamento não encontrado.");
     }
 
@@ -515,42 +577,131 @@ export async function updateTransactionAction(formData: FormData) {
     await validateCategoryBelongsToFamily(categoryId, session.familyId);
     await validateCreditCardBelongsToFamily(creditCardId, session.familyId);
 
-    if (oldTransaction.paymentMethod !== "CREDIT_CARD") {
-      await revertAccountImpact({
-        accountId: oldTransaction.accountId,
-        type: oldTransaction.type,
-        status: oldTransaction.status,
-        amount: Number(oldTransaction.amount),
-      });
-    }
+    const oldSeriesMetadata = getRepeatMetadata(oldTransaction.notes);
+    const shouldUpdateFuture = editMode === "future" && oldSeriesMetadata;
+    const statusWasChanged = status !== oldTransaction.status;
+    const baseTransactionDate = createDateFromInput(transactionDate);
+    const baseDueDate =
+      dueDateValue && oldTransaction.dueDate
+        ? createDateFromInput(dueDateValue)
+        : null;
 
-    await prisma.transaction.update({
-      where: {
-        id: transactionId,
-      },
-      data: {
-        accountId,
-        creditCardId,
-        categoryId,
-        type,
-        description,
-        amount,
-        transactionDate: createDateFromInput(transactionDate),
-        dueDate: dueDateValue ? createDateFromInput(dueDateValue) : null,
-        status,
-        paymentMethod,
-        notes,
-        paidAt: status === "PAID" ? new Date() : null,
-      },
-    });
+    const transactionsToUpdate = shouldUpdateFuture
+      ? (
+          await prisma.transaction.findMany({
+            where: {
+              familyId: session.familyId,
+              notes: {
+                contains: `REPETICAO_ID:${oldSeriesMetadata.repetitionId}`,
+              },
+            },
+          })
+        )
+          .map((transaction) => ({
+            transaction,
+            metadata: getRepeatMetadata(transaction.notes),
+          }))
+          .filter(
+            (item): item is {
+              transaction: typeof oldTransaction;
+              metadata: NonNullable<ReturnType<typeof getRepeatMetadata>>;
+            } => {
+              if (!item.metadata) {
+                return false;
+              }
 
-    if (!isCreditCardPayment) {
-      await applyAccountImpact({
-        accountId,
-        type,
-        status,
-        amount,
+              return (
+                item.metadata.repetitionId ===
+                  oldSeriesMetadata.repetitionId &&
+                item.metadata.installmentNumber >=
+                  oldSeriesMetadata.installmentNumber
+              );
+            },
+          )
+          .sort(
+            (a, b) =>
+              a.metadata.installmentNumber - b.metadata.installmentNumber,
+          )
+      : [
+          {
+            transaction: oldTransaction,
+            metadata: oldSeriesMetadata,
+          },
+        ];
+
+    for (const item of transactionsToUpdate) {
+      const currentTransaction = item.transaction;
+      const installmentOffset =
+        item.metadata && oldSeriesMetadata
+          ? item.metadata.installmentNumber -
+            oldSeriesMetadata.installmentNumber
+          : 0;
+      const nextStatus = statusWasChanged ? status : currentTransaction.status;
+      const nextTransactionDate = addMonths(
+        baseTransactionDate,
+        installmentOffset,
+      );
+      const nextDueDate = baseDueDate
+        ? addMonths(baseDueDate, installmentOffset)
+        : null;
+      const currentInstallmentLabel = oldSeriesMetadata
+        ? `${oldSeriesMetadata.installmentNumber}/${oldSeriesMetadata.totalInstallments}`
+        : "";
+      const targetInstallmentLabel = item.metadata
+        ? `${item.metadata.installmentNumber}/${item.metadata.totalInstallments}`
+        : "";
+      const nextDescription =
+        shouldUpdateFuture && item.metadata && oldSeriesMetadata
+          ? buildSeriesDescription(
+              description,
+              currentInstallmentLabel,
+              targetInstallmentLabel,
+            )
+          : description;
+      const nextNotes = item.metadata
+        ? buildNotesPreservingMetadata(notes, item.metadata.metadataTokens)
+        : notes;
+
+      if (currentTransaction.paymentMethod !== "CREDIT_CARD") {
+        await revertAccountImpact({
+          accountId: currentTransaction.accountId,
+          type: currentTransaction.type,
+          status: currentTransaction.status,
+          amount: Number(currentTransaction.amount),
+        });
+      }
+
+      await prisma.transaction.update({
+        where: {
+          id: currentTransaction.id,
+        },
+        data: {
+          accountId,
+          creditCardId,
+          categoryId,
+          type,
+          description: nextDescription,
+          amount,
+          transactionDate: nextTransactionDate,
+          dueDate: nextDueDate,
+          status: nextStatus,
+          paymentMethod,
+          notes: nextNotes,
+          paidAt:
+            nextStatus === "PAID"
+              ? currentTransaction.paidAt ?? new Date()
+              : null,
+        },
       });
+
+      if (!isCreditCardPayment) {
+        await applyAccountImpact({
+          accountId,
+          type,
+          status: nextStatus,
+          amount,
+        });
+      }
     }
   });
 
@@ -565,13 +716,14 @@ export async function deleteTransactionAction(formData: FormData) {
   const transactionId = getRequiredValue(formData, "transactionId");
 
   await prisma.$transaction(async () => {
-    const transaction = await prisma.transaction.findUnique({
+    const transaction = await prisma.transaction.findFirst({
       where: {
         id: transactionId,
+        familyId: session.familyId,
       },
     });
 
-    if (!transaction || transaction.familyId !== session.familyId) {
+    if (!transaction) {
       throw new Error("Lançamento não encontrado.");
     }
 

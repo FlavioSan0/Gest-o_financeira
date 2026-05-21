@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { type FormEvent, useRef, useState } from "react";
 import Link from "next/link";
 import {
   ArrowDownCircle,
@@ -55,6 +55,11 @@ type TransactionEditData = {
   status: "PAID" | "PENDING" | "OVERDUE" | "CANCELED";
   paymentMethod: PaymentMethod;
   notes: string;
+  series: {
+    repetitionId: string;
+    currentInstallment: number;
+    totalInstallments: number;
+  } | null;
 };
 
 type TransactionEditFormMobileProps = {
@@ -72,6 +77,10 @@ export function TransactionEditFormMobile({
   creditCards,
   defaultType,
 }: TransactionEditFormMobileProps) {
+  const formRef = useRef<HTMLFormElement>(null);
+  const editModeInputRef = useRef<HTMLInputElement>(null);
+  const confirmedSubmitRef = useRef(false);
+  const [showSeriesDialog, setShowSeriesDialog] = useState(false);
   const transactionType = defaultType ?? transaction.type;
   const isIncome = transactionType === "INCOME";
   const isExpense = transactionType === "EXPENSE";
@@ -96,6 +105,26 @@ export function TransactionEditFormMobile({
     setPaymentMethod(method);
   }
 
+  function handleSubmit(event: FormEvent<HTMLFormElement>) {
+    if (transaction.series && !confirmedSubmitRef.current) {
+      event.preventDefault();
+      setShowSeriesDialog(true);
+      return;
+    }
+
+    confirmedSubmitRef.current = false;
+  }
+
+  function submitWithEditMode(mode: "single" | "future") {
+    if (editModeInputRef.current) {
+      editModeInputRef.current.value = mode;
+    }
+
+    confirmedSubmitRef.current = true;
+    setShowSeriesDialog(false);
+    formRef.current?.requestSubmit();
+  }
+
   const paymentOptions: { value: PaymentMethod; label: string }[] = isIncome
     ? [
         { value: "PIX", label: "Pix" },
@@ -114,9 +143,20 @@ export function TransactionEditFormMobile({
       ];
 
   return (
-    <form action={updateTransactionAction} className="mobile-transaction-form">
+    <form
+      ref={formRef}
+      action={updateTransactionAction}
+      onSubmit={handleSubmit}
+      className="mobile-transaction-form"
+    >
       <input type="hidden" name="transactionId" value={transaction.id} />
       <input type="hidden" name="type" value={transactionType} />
+      <input
+        ref={editModeInputRef}
+        type="hidden"
+        name="editMode"
+        value="single"
+      />
 
       {isIncome && <input type="hidden" name="status" value="PAID" />}
 
@@ -230,10 +270,9 @@ export function TransactionEditFormMobile({
             <label className="mobile-form-label">Data de vencimento</label>
 
             <input
-              required
               type="date"
               name="dueDate"
-              defaultValue={transaction.dueDate || transaction.transactionDate}
+              defaultValue={transaction.dueDate}
               className="finance-input"
             />
           </div>
@@ -373,6 +412,51 @@ export function TransactionEditFormMobile({
         <Save className="h-4 w-4" />
         Salvar alterações
       </button>
+      {showSeriesDialog && transaction.series ? (
+        <div className="fixed inset-0 z-[120] flex items-end bg-black/70 px-4 pb-5 backdrop-blur-sm sm:items-center sm:justify-center sm:pb-0">
+          <div className="w-full rounded-[2rem] border border-white/10 bg-[#050816] p-5 shadow-2xl shadow-black/60 sm:max-w-md">
+            <p className="text-sm font-bold text-cyan-200">
+              Parcela {transaction.series.currentInstallment}/
+              {transaction.series.totalInstallments}
+            </p>
+
+            <h3 className="mt-2 text-xl font-black tracking-[-0.03em] text-white">
+              Como deseja editar?
+            </h3>
+
+            <p className="mt-2 text-sm leading-6 app-muted-text">
+              Este lançamento faz parte de uma série. Escolha se a mudança vale
+              só para esta parcela ou também para as próximas.
+            </p>
+
+            <div className="mt-5 grid gap-3">
+              <button
+                type="button"
+                onClick={() => submitWithEditMode("single")}
+                className="mobile-form-submit"
+              >
+                Somente este
+              </button>
+
+              <button
+                type="button"
+                onClick={() => submitWithEditMode("future")}
+                className="rounded-2xl border border-white/10 bg-white/8 px-4 py-3 text-sm font-extrabold text-white transition hover:bg-white hover:text-slate-950"
+              >
+                Este e próximos
+              </button>
+
+              <button
+                type="button"
+                onClick={() => setShowSeriesDialog(false)}
+                className="rounded-2xl border border-white/10 bg-black/25 px-4 py-3 text-sm font-extrabold text-white/60"
+              >
+                Cancelar
+              </button>
+            </div>
+          </div>
+        </div>
+      ) : null}
     </form>
   );
 }
