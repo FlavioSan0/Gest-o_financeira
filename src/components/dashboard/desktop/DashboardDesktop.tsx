@@ -1,6 +1,7 @@
 import { CategoryExpensesPieChart } from "@/components/dashboard/CategoryExpensesPieChart";
 import { DashboardHero } from "@/components/dashboard/DashboardHero";
 import { DashboardInsights } from "@/components/dashboard/DashboardInsights";
+import { DashboardMonthSelector } from "@/components/dashboard/DashboardMonthSelector";
 import { MonthlyOverview } from "@/components/dashboard/MonthlyOverview";
 import { RecentTransactions } from "@/components/dashboard/RecentTransactions";
 import { ResponsibleOverview } from "@/components/dashboard/ResponsibleOverview";
@@ -16,6 +17,8 @@ import {
 
 type DashboardData = {
   monthLabel: string;
+  referenceMonth: number;
+  referenceYear: number;
   balance: string;
   income: string;
   expenses: string;
@@ -135,6 +138,12 @@ export function DashboardDesktop({ dashboard }: DashboardDesktopProps) {
 
   return (
     <div className="app-container dashboard-grid">
+      <DashboardMonthSelector
+        month={dashboard.referenceMonth}
+        year={dashboard.referenceYear}
+        label={`Referência: ${dashboard.monthLabel}`}
+      />
+
       <DashboardHero
         monthLabel={dashboard.monthLabel}
         balance={dashboard.balance}

@@ -4,8 +4,21 @@ import { DashboardDesktop } from "@/components/dashboard/desktop/DashboardDeskto
 import { DashboardMobile } from "@/components/dashboard/mobile/DashboardMobile";
 import { getDashboardData } from "@/services/dashboard-service";
 
-export default async function DashboardPage() {
-  const dashboard = await getDashboardData();
+type DashboardPageProps = {
+  searchParams?: Promise<{
+    month?: string;
+    year?: string;
+  }>;
+};
+
+export default async function DashboardPage({
+  searchParams,
+}: DashboardPageProps) {
+  const query = await searchParams;
+  const dashboard = await getDashboardData({
+    month: query?.month,
+    year: query?.year,
+  });
 
   return (
     <AppShell>

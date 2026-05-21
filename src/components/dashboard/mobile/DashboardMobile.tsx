@@ -14,10 +14,13 @@ import {
 } from "lucide-react";
 import { CategoryExpensesPieChart } from "@/components/dashboard/CategoryExpensesPieChart";
 import { DashboardInsights } from "@/components/dashboard/DashboardInsights";
+import { DashboardMonthSelector } from "@/components/dashboard/DashboardMonthSelector";
 import { TransactionsChart } from "@/components/dashboard/TransactionsChart";
 
 type DashboardData = {
   monthLabel: string;
+  referenceMonth: number;
+  referenceYear: number;
   balance: string;
   income: string;
   expenses: string;
@@ -112,6 +115,13 @@ export function DashboardMobile({ dashboard }: DashboardMobileProps) {
 
   return (
     <div className="mobile-dashboard">
+      <DashboardMonthSelector
+        month={dashboard.referenceMonth}
+        year={dashboard.referenceYear}
+        label={`Referência: ${dashboard.monthLabel}`}
+        compact
+      />
+
       <section className="mobile-balance-card">
         <div className="mobile-balance-card__top">
           <div>

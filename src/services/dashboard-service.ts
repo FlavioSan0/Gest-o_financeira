@@ -64,6 +64,8 @@ export type CategoryExpenseSummary = {
 
 export type DashboardData = {
   monthLabel: string;
+  referenceMonth: number;
+  referenceYear: number;
   balance: string;
   income: string;
   expenses: string;
@@ -83,34 +85,70 @@ export type DashboardData = {
   upcomingPending: UpcomingPendingInsight;
 };
 
-function getCurrentMonthRange() {
+type DashboardPeriodInput = {
+  month?: string | number | null;
+  year?: string | number | null;
+};
+
+function getReferencePeriod(input: DashboardPeriodInput = {}) {
   const now = new Date();
-
-  const start = new Date(now.getFullYear(), now.getMonth(), 1);
-  const end = new Date(now.getFullYear(), now.getMonth() + 1, 1);
-
-  return { start, end };
-}
-
-function getMonthLabel() {
+  const parsedMonth = Number(input.month);
+  const parsedYear = Number(input.year);
+  const month =
+    Number.isInteger(parsedMonth) && parsedMonth >= 1 && parsedMonth <= 12
+      ? parsedMonth
+      : now.getMonth() + 1;
+  const year =
+    Number.isInteger(parsedYear) && parsedYear >= 2000 && parsedYear <= 2100
+      ? parsedYear
+      : now.getFullYear();
+  const start = new Date(year, month - 1, 1);
+  const end = new Date(year, month, 1);
   const label = new Intl.DateTimeFormat("pt-BR", {
     month: "long",
     year: "numeric",
-  }).format(new Date());
+  }).format(start);
 
-  return label.charAt(0).toUpperCase() + label.slice(1);
+  return {
+    month,
+    year,
+    start,
+    end,
+    label: label.charAt(0).toUpperCase() + label.slice(1),
+  };
 }
 
-function getTodayStart() {
-  const now = new Date();
-
-  return new Date(now.getFullYear(), now.getMonth(), now.getDate());
+function getReferenceDateWhere(start: Date, end: Date) {
+  return {
+    OR: [
+      {
+        dueDate: {
+          gte: start,
+          lt: end,
+        },
+      },
+      {
+        dueDate: null,
+        transactionDate: {
+          gte: start,
+          lt: end,
+        },
+      },
+    ],
+  };
 }
 
 function toNumber(value: unknown) {
   if (!value) return 0;
 
   return Number(value);
+}
+
+function getEffectiveTransactionDate(transaction: {
+  dueDate: Date | null;
+  transactionDate: Date;
+}) {
+  return transaction.dueDate ?? transaction.transactionDate;
 }
 
 function buildCategoryExpenseSummary(
@@ -158,10 +196,13 @@ function buildCategoryExpenseSummary(
     }));
 }
 
-async function getDashboardDataForFamily(familyId: string): Promise<DashboardData> {
-  const { start, end } = getCurrentMonthRange();
-  const chartStart = new Date(start);
-  chartStart.setMonth(chartStart.getMonth() - 11);
+async function getDashboardDataForFamily(
+  familyId: string,
+  month: number,
+  year: number,
+): Promise<DashboardData> {
+  const { start, end, label } = getReferencePeriod({ month, year });
+  const referenceDateWhere = getReferenceDateWhere(start, end);
 
   const family = await prisma.family.findUnique({
     where: {
@@ -181,7 +222,9 @@ async function getDashboardDataForFamily(familyId: string): Promise<DashboardDat
 
   if (!family) {
     return {
-      monthLabel: getMonthLabel(),
+      monthLabel: label,
+      referenceMonth: month,
+      referenceYear: year,
       balance: formatCurrency(0),
       income: formatCurrency(0),
       expenses: formatCurrency(0),
@@ -202,7 +245,6 @@ async function getDashboardDataForFamily(familyId: string): Promise<DashboardDat
     };
   }
 
-  const today = getTodayStart();
   const [
     incomeAggregate,
     expenseAggregate,
@@ -225,10 +267,7 @@ async function getDashboardDataForFamily(familyId: string): Promise<DashboardDat
         familyId: family.id,
         type: "INCOME",
         status: "PAID",
-        transactionDate: {
-          gte: start,
-          lt: end,
-        },
+        ...referenceDateWhere,
       },
       _sum: {
         amount: true,
@@ -240,10 +279,7 @@ async function getDashboardDataForFamily(familyId: string): Promise<DashboardDat
         familyId: family.id,
         type: "EXPENSE",
         status: "PAID",
-        transactionDate: {
-          gte: start,
-          lt: end,
-        },
+        ...referenceDateWhere,
       },
       _sum: {
         amount: true,
@@ -255,10 +291,7 @@ async function getDashboardDataForFamily(familyId: string): Promise<DashboardDat
         familyId: family.id,
         type: "INCOME",
         status: "PAID",
-        transactionDate: {
-          gte: start,
-          lt: end,
-        },
+        ...referenceDateWhere,
       },
     }),
 
@@ -267,10 +300,7 @@ async function getDashboardDataForFamily(familyId: string): Promise<DashboardDat
         familyId: family.id,
         type: "EXPENSE",
         status: "PAID",
-        transactionDate: {
-          gte: start,
-          lt: end,
-        },
+        ...referenceDateWhere,
       },
     }),
 
@@ -280,6 +310,7 @@ async function getDashboardDataForFamily(familyId: string): Promise<DashboardDat
         status: {
           in: ["PENDING", "OVERDUE"],
         },
+        ...referenceDateWhere,
       },
     }),
 
@@ -310,11 +341,11 @@ async function getDashboardDataForFamily(familyId: string): Promise<DashboardDat
     prisma.transaction.findMany({
       where: {
         familyId: family.id,
+        status: {
+          not: "CANCELED",
+        },
+        ...referenceDateWhere,
       },
-      orderBy: {
-        transactionDate: "desc",
-      },
-      take: 5,
       include: {
         category: true,
         user: true,
@@ -325,12 +356,9 @@ async function getDashboardDataForFamily(familyId: string): Promise<DashboardDat
       where: {
         familyId: family.id,
         status: {
-          not: "CANCELED",
+          in: ["PAID"],
         },
-        transactionDate: {
-          gte: start,
-          lt: end,
-        },
+        ...referenceDateWhere,
       },
       select: {
         id: true,
@@ -346,10 +374,7 @@ async function getDashboardDataForFamily(familyId: string): Promise<DashboardDat
         status: {
           in: ["PAID", "PENDING", "OVERDUE"],
         },
-        transactionDate: {
-          gte: chartStart,
-          lt: end,
-        },
+        ...referenceDateWhere,
       },
       orderBy: {
         transactionDate: "asc",
@@ -365,10 +390,7 @@ async function getDashboardDataForFamily(familyId: string): Promise<DashboardDat
         familyId: family.id,
         type: "EXPENSE",
         status: "PAID",
-        transactionDate: {
-          gte: start,
-          lt: end,
-        },
+        ...referenceDateWhere,
       },
       select: {
         amount: true,
@@ -388,10 +410,7 @@ async function getDashboardDataForFamily(familyId: string): Promise<DashboardDat
         status: {
           in: ["PAID", "PENDING"],
         },
-        transactionDate: {
-          gte: start,
-          lt: end,
-        },
+        ...referenceDateWhere,
       },
       select: {
         amount: true,
@@ -409,10 +428,7 @@ async function getDashboardDataForFamily(familyId: string): Promise<DashboardDat
         familyId: family.id,
         type: "EXPENSE",
         status: "PAID",
-        transactionDate: {
-          gte: start,
-          lt: end,
-        },
+        ...referenceDateWhere,
       },
       orderBy: {
         amount: "desc",
@@ -427,19 +443,7 @@ async function getDashboardDataForFamily(familyId: string): Promise<DashboardDat
         familyId: family.id,
         type: "EXPENSE",
         status: "PENDING",
-        OR: [
-          {
-            dueDate: {
-              gte: today,
-            },
-          },
-          {
-            dueDate: null,
-            transactionDate: {
-              gte: today,
-            },
-          },
-        ],
+        ...referenceDateWhere,
       },
       orderBy: [
         {
@@ -492,7 +496,7 @@ async function getDashboardDataForFamily(familyId: string): Promise<DashboardDat
       amount: Number(transaction.amount),
       type: transaction.type,
       status: transaction.status,
-      transactionDate: transaction.transactionDate.toISOString(),
+      transactionDate: getEffectiveTransactionDate(transaction).toISOString(),
       categoryId: transaction.category?.id ?? null,
       category: transaction.category?.name ?? "Sem categoria",
       responsibleId: transaction.user?.id ?? null,
@@ -506,9 +510,18 @@ async function getDashboardDataForFamily(familyId: string): Promise<DashboardDat
     categoryExpenseForecastTransactions,
   );
   const topExpenseCategory = categoryExpenseSummary[0] ?? null;
+  const sortedRecentTransactions = [...recentTransactions]
+    .sort(
+      (a, b) =>
+        getEffectiveTransactionDate(b).getTime() -
+        getEffectiveTransactionDate(a).getTime(),
+    )
+    .slice(0, 5);
 
   return {
-    monthLabel: getMonthLabel(),
+    monthLabel: label,
+    referenceMonth: month,
+    referenceYear: year,
     balance: formatCurrency(balance),
     income: formatCurrency(incomeTotal),
     expenses: formatCurrency(expenseTotal),
@@ -518,14 +531,14 @@ async function getDashboardDataForFamily(familyId: string): Promise<DashboardDat
     activeGoalsCount,
     incomeTransactionsCount,
     expenseTransactionsCount,
-    recentTransactions: recentTransactions.map((transaction) => ({
+    recentTransactions: sortedRecentTransactions.map((transaction) => ({
       id: transaction.id,
       description: transaction.description,
       amount: formatCurrency(Number(transaction.amount)),
       type: transaction.type,
       status: transaction.status,
       date: new Intl.DateTimeFormat("pt-BR").format(
-        transaction.transactionDate,
+        getEffectiveTransactionDate(transaction),
       ),
       category: transaction.category?.name ?? "Sem categoria",
       responsible: transaction.user?.name ?? "Não informado",
@@ -541,7 +554,7 @@ async function getDashboardDataForFamily(familyId: string): Promise<DashboardDat
           amount: Number(largestExpense.amount),
           formattedAmount: formatCurrency(Number(largestExpense.amount)),
           date: new Intl.DateTimeFormat("pt-BR").format(
-            largestExpense.transactionDate,
+            getEffectiveTransactionDate(largestExpense),
           ),
           categoryName: largestExpense.category?.name ?? "Sem categoria",
         }
@@ -560,16 +573,24 @@ async function getDashboardDataForFamily(familyId: string): Promise<DashboardDat
   };
 }
 
-export async function getDashboardData(): Promise<DashboardData> {
+export async function getDashboardData(
+  input: DashboardPeriodInput = {},
+): Promise<DashboardData> {
   const session = await requireSession();
   const tags = familyCacheTags(session.familyId);
+  const period = getReferencePeriod(input);
 
   return unstable_cache(
     getDashboardDataForFamily,
-    ["dashboard", session.familyId],
+    [
+      "dashboard",
+      session.familyId,
+      String(period.month),
+      String(period.year),
+    ],
     {
       revalidate: 60,
       tags: [tags.dashboard, tags.transactions, tags.accounts, tags.cards],
     },
-  )(session.familyId);
+  )(session.familyId, period.month, period.year);
 }

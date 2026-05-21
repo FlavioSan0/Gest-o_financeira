@@ -21,7 +21,7 @@ export function DashboardHero({ monthLabel, balance }: DashboardHeroProps) {
           </div>
 
           <div className="rounded-3xl border border-white/10 bg-black/35 p-5">
-            <p className="text-sm app-faint-text">M&ecirc;s atual</p>
+            <p className="text-sm app-faint-text">Refer&ecirc;ncia</p>
 
             <div className="mt-3 flex items-center gap-3">
               <CalendarDays className="h-5 w-5 text-white" />
