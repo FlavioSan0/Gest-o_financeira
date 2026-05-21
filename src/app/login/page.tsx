@@ -4,6 +4,7 @@ import { loginAction } from "@/actions/auth-actions";
 type LoginPageProps = {
   searchParams: Promise<{
     error?: string;
+    message?: string;
     next?: string;
   }>;
 };
@@ -13,8 +14,12 @@ function getErrorMessage(error?: string) {
     return "E-mail ou senha inválidos.";
   }
 
-  if (error === "no-family") {
-    return "Usuário sem família vinculada no sistema.";
+  return null;
+}
+
+function getSuccessMessage(message?: string) {
+  if (message === "password-updated") {
+    return "Senha alterada com sucesso. Entre novamente.";
   }
 
   return null;
@@ -23,6 +28,7 @@ function getErrorMessage(error?: string) {
 export default async function LoginPage({ searchParams }: LoginPageProps) {
   const params = await searchParams;
   const errorMessage = getErrorMessage(params.error);
+  const successMessage = getSuccessMessage(params.message);
 
   return (
     <main className="min-h-screen bg-[#020617] text-white">
@@ -34,7 +40,7 @@ export default async function LoginPage({ searchParams }: LoginPageProps) {
             </div>
 
             <div>
-              <p className="text-sm text-white/45">Finanças do casal</p>
+              <p className="text-sm text-white/45">Financas do casal</p>
               <h1 className="text-2xl font-black tracking-[-0.04em]">
                 Entrar no app
               </h1>
@@ -42,15 +48,21 @@ export default async function LoginPage({ searchParams }: LoginPageProps) {
           </div>
 
           <p className="mt-6 text-sm leading-6 text-white/55">
-            Acesse sua área financeira para registrar lançamentos, acompanhar
-            contas, cartões e faturas com segurança.
+            Acesse sua area financeira para registrar lancamentos, acompanhar
+            contas, cartoes e faturas com seguranca.
           </p>
 
-          {errorMessage && (
+          {errorMessage ? (
             <div className="mt-5 rounded-3xl border border-red-500/20 bg-red-500/10 p-4 text-sm font-bold text-red-400">
               {errorMessage}
             </div>
-          )}
+          ) : null}
+
+          {successMessage ? (
+            <div className="mt-5 rounded-3xl border border-emerald-500/20 bg-emerald-500/10 p-4 text-sm font-bold text-emerald-300">
+              {successMessage}
+            </div>
+          ) : null}
 
           <form action={loginAction} className="mt-6 grid gap-4">
             <input type="hidden" name="next" value={params.next ?? "/"} />
@@ -64,8 +76,9 @@ export default async function LoginPage({ searchParams }: LoginPageProps) {
                 required
                 type="email"
                 name="email"
-                placeholder="flavio@financas.local"
+                placeholder="voce@email.com"
                 className="finance-input"
+                autoComplete="email"
               />
             </div>
 
@@ -80,6 +93,7 @@ export default async function LoginPage({ searchParams }: LoginPageProps) {
                 name="password"
                 placeholder="Digite sua senha"
                 className="finance-input"
+                autoComplete="current-password"
               />
             </div>
 
@@ -90,12 +104,12 @@ export default async function LoginPage({ searchParams }: LoginPageProps) {
 
           <div className="mt-6 rounded-3xl border border-white/10 bg-black/25 p-4">
             <p className="text-xs font-bold text-white/45">
-              Segurança aplicada
+              Seguranca aplicada
             </p>
 
             <p className="mt-1 text-xs leading-5 text-white/40">
-              Sessão protegida por cookie HTTP-only. Os lançamentos passam a ser
-              vinculados automaticamente ao usuário logado.
+              Sessao protegida por cookie HTTP-only. Os lancamentos sao
+              vinculados automaticamente ao usuario logado.
             </p>
           </div>
         </section>

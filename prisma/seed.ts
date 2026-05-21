@@ -16,10 +16,17 @@ async function main() {
 
   const flavioSeedPassword = process.env.SEED_FLAVIO_PASSWORD;
   const anaSeedPassword = process.env.SEED_ANA_PASSWORD;
+  const flavioSeedEmail = process.env.SEED_FLAVIO_EMAIL;
+  const anaSeedEmail = process.env.SEED_ANA_EMAIL;
 
-  if (!flavioSeedPassword || !anaSeedPassword) {
+  if (
+    !flavioSeedEmail ||
+    !flavioSeedPassword ||
+    !anaSeedEmail ||
+    !anaSeedPassword
+  ) {
     throw new Error(
-      "Configure SEED_FLAVIO_PASSWORD e SEED_ANA_PASSWORD no .env antes de rodar o seed.",
+      "Configure SEED_FLAVIO_EMAIL, SEED_FLAVIO_PASSWORD, SEED_ANA_EMAIL e SEED_ANA_PASSWORD no .env antes de rodar o seed.",
     );
   }
 
@@ -28,7 +35,7 @@ async function main() {
 
   const flavio = await prisma.user.upsert({
     where: {
-      email: "flavio@financas.local",
+      email: flavioSeedEmail.toLowerCase(),
     },
     update: {
       name: "Flávio",
@@ -36,14 +43,14 @@ async function main() {
     },
     create: {
       name: "Flávio",
-      email: "flavio@financas.local",
+      email: flavioSeedEmail.toLowerCase(),
       passwordHash: flavioPasswordHash,
     },
   });
 
   const ana = await prisma.user.upsert({
     where: {
-      email: "ana@financas.local",
+      email: anaSeedEmail.toLowerCase(),
     },
     update: {
       name: "Ana",
@@ -51,7 +58,7 @@ async function main() {
     },
     create: {
       name: "Ana",
-      email: "ana@financas.local",
+      email: anaSeedEmail.toLowerCase(),
       passwordHash: anaPasswordHash,
     },
   });
@@ -61,11 +68,11 @@ async function main() {
       id: "family-flavio-ana",
     },
     update: {
-      name: "Flávio & Ana",
+      name: "Família Flávio e Ana",
     },
     create: {
       id: "family-flavio-ana",
-      name: "Flávio & Ana",
+      name: "Família Flávio e Ana",
     },
   });
 

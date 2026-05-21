@@ -8,6 +8,7 @@ export function familyCacheTags(familyId: string) {
     cards: familyCacheTag(familyId, "cards"),
     categories: familyCacheTag(familyId, "categories"),
     dashboard: familyCacheTag(familyId, "dashboard"),
+    goals: familyCacheTag(familyId, "goals"),
     options: familyCacheTag(familyId, "options"),
     recurring: familyCacheTag(familyId, "recurring"),
     transactions: familyCacheTag(familyId, "transactions"),

@@ -9,7 +9,7 @@ function getRequiredValue(formData: FormData, field: string) {
   const value = formData.get(field);
 
   if (!value || typeof value !== "string" || value.trim() === "") {
-    throw new Error(`Campo obrigatório não informado: ${field}`);
+    redirect("/login?error=invalid");
   }
 
   return value.trim();
@@ -38,9 +38,15 @@ export async function loginAction(formData: FormData) {
     where: {
       email,
     },
+    select: {
+      id: true,
+      name: true,
+      email: true,
+      passwordHash: true,
+    },
   });
 
-  if (!user || !user.passwordHash) {
+  if (!user?.passwordHash) {
     redirect("/login?error=invalid");
   }
 
@@ -54,13 +60,13 @@ export async function loginAction(formData: FormData) {
     where: {
       userId: user.id,
     },
-    include: {
-      family: true,
+    select: {
+      familyId: true,
     },
   });
 
   if (!membership) {
-    redirect("/login?error=no-family");
+    redirect("/login?error=invalid");
   }
 
   await prisma.user.update({
