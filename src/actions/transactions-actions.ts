@@ -51,6 +51,24 @@ type TransactionCreateInput = {
 const SERIES_PAID_OUTSIDE_LIMIT_ERROR = "SERIES_PAID_OUTSIDE_LIMIT";
 const SERIES_INVALID_TOTAL_ERROR = "SERIES_INVALID_TOTAL";
 
+const transactionUpdateSelect = {
+  id: true,
+  familyId: true,
+  accountId: true,
+  creditCardId: true,
+  categoryId: true,
+  userId: true,
+  type: true,
+  description: true,
+  amount: true,
+  transactionDate: true,
+  dueDate: true,
+  paidAt: true,
+  status: true,
+  paymentMethod: true,
+  notes: true,
+} as const;
+
 type RepeatMetadata = {
   repetitionId: string;
   repetitionType: RepeatMode;
@@ -646,300 +664,397 @@ export async function updateTransactionAction(formData: FormData) {
 
   const status = (getOptionalValue(formData, "status") ??
     "PAID") as TransactionStatus;
+  const familyId = session.familyId;
+  const userId = session.userId;
+  const baseTransactionDate = createDateFromInput(transactionDate);
+
+  await Promise.all([
+    validateAccountBelongsToFamily(accountId, familyId),
+    validateCategoryBelongsToFamily(categoryId, familyId),
+    validateCreditCardBelongsToFamily(creditCardId, familyId),
+  ]);
 
   try {
-    await prisma.$transaction(async () => {
-    const oldTransaction = await prisma.transaction.findFirst({
-      where: {
-        id: transactionId,
-        familyId: session.familyId,
-      },
-    });
-
-    if (!oldTransaction) {
-      throw new Error("Lançamento não encontrado.");
-    }
-
-    await validateAccountBelongsToFamily(accountId, session.familyId);
-    await validateCategoryBelongsToFamily(categoryId, session.familyId);
-    await validateCreditCardBelongsToFamily(creditCardId, session.familyId);
-
-    const oldSeriesMetadata = getRepeatMetadata(oldTransaction.notes);
-    const shouldUpdateFuture = editMode === "future" && oldSeriesMetadata;
-    const requestedTotalInstallments =
-      shouldUpdateFuture && oldSeriesMetadata
-        ? parseSeriesTotalInstallments(
-            requestedTotalInstallmentsValue,
-            oldSeriesMetadata.totalInstallments,
-            oldSeriesMetadata.installmentNumber,
-          )
-        : oldSeriesMetadata?.totalInstallments ?? null;
-    const installmentAmount =
-      shouldUpdateFuture && oldSeriesMetadata && requestedTotalInstallments
-        ? getSeriesInstallmentAmount(
-            amount,
-            oldSeriesMetadata,
-            requestedTotalInstallments,
-          )
-        : amount;
-    const statusWasChanged = status !== oldTransaction.status;
-    const baseTransactionDate = createDateFromInput(transactionDate);
-    const baseDueDate =
-      dueDateValue && oldTransaction.dueDate
-        ? createDateFromInput(dueDateValue)
-        : null;
-
-    const seriesItems = shouldUpdateFuture
-      ? (
-          await prisma.transaction.findMany({
-            where: {
-              familyId: session.familyId,
-              notes: {
-                contains: `REPETICAO_ID:${oldSeriesMetadata.repetitionId}`,
-              },
-            },
-          })
-        )
-          .map((transaction) => ({
-            transaction,
-            metadata: getRepeatMetadata(transaction.notes),
-          }))
-          .filter(
-            (item): item is {
-              transaction: typeof oldTransaction;
-              metadata: RepeatMetadata;
-            } => {
-              if (!item.metadata) {
-                return false;
-              }
-
-              return (
-                item.metadata.repetitionId ===
-                  oldSeriesMetadata.repetitionId &&
-                item.metadata.installmentNumber >=
-                  oldSeriesMetadata.installmentNumber
-              );
-            },
-          )
-          .sort(
-            (a, b) =>
-              a.metadata.installmentNumber - b.metadata.installmentNumber,
-          )
-      : [
-          {
-            transaction: oldTransaction,
-            metadata: oldSeriesMetadata,
-          },
-        ];
-    const seriesItemsWithMetadata = seriesItems.filter(
-      (item): item is {
-        transaction: typeof oldTransaction;
-        metadata: RepeatMetadata;
-      } => Boolean(item.metadata),
-    );
-
-    if (shouldUpdateFuture && oldSeriesMetadata && requestedTotalInstallments) {
-      const paidOutsideNewLimit = seriesItemsWithMetadata.some(
-        (item) =>
-          item.metadata.installmentNumber > requestedTotalInstallments &&
-          item.transaction.status === "PAID",
-      );
-
-      if (paidOutsideNewLimit) {
-        throw new Error(SERIES_PAID_OUTSIDE_LIMIT_ERROR);
-      }
-    }
-
-    const transactionsToUpdate =
-      shouldUpdateFuture && requestedTotalInstallments
-        ? seriesItemsWithMetadata.filter(
-            (item) => item.metadata.installmentNumber <= requestedTotalInstallments,
-          )
-        : seriesItems;
-
-    for (const item of transactionsToUpdate) {
-      const currentTransaction = item.transaction;
-      const installmentOffset =
-        item.metadata && oldSeriesMetadata
-          ? item.metadata.installmentNumber -
-            oldSeriesMetadata.installmentNumber
-          : 0;
-      const nextStatus = statusWasChanged ? status : currentTransaction.status;
-      const nextTransactionDate = addMonths(
-        baseTransactionDate,
-        installmentOffset,
-      );
-      const nextDueDate = baseDueDate
-        ? addMonths(baseDueDate, installmentOffset)
-        : null;
-      const currentInstallmentLabel = oldSeriesMetadata
-        ? `${oldSeriesMetadata.installmentNumber}/${oldSeriesMetadata.totalInstallments}`
-        : "";
-      const targetInstallmentLabel = item.metadata
-        ? `${item.metadata.installmentNumber}/${item.metadata.totalInstallments}`
-        : "";
-      const nextDescription =
-        shouldUpdateFuture && item.metadata && oldSeriesMetadata
-          ? buildSeriesDescription(
-              description,
-              currentInstallmentLabel,
-              targetInstallmentLabel,
-            )
-          : description;
-      const nextNotes = item.metadata
-        ? buildNotesPreservingMetadata(
-            notes,
-            buildSeriesMetadataTokens(
-              item.metadata,
-              item.metadata.installmentNumber,
-              requestedTotalInstallments ?? item.metadata.totalInstallments,
-            ),
-          )
-        : notes;
-
-      if (currentTransaction.paymentMethod !== "CREDIT_CARD") {
-        await revertAccountImpact({
-          accountId: currentTransaction.accountId,
-          type: currentTransaction.type,
-          status: currentTransaction.status,
-          amount: Number(currentTransaction.amount),
-        });
-      }
-
-      await prisma.transaction.update({
-        where: {
-          id: currentTransaction.id,
-        },
-        data: {
-          accountId,
-          creditCardId,
-          categoryId,
-          type,
-          description: nextDescription,
-          amount: installmentAmount,
-          transactionDate: nextTransactionDate,
-          dueDate: nextDueDate,
-          status: nextStatus,
-          paymentMethod,
-          notes: nextNotes,
-          paidAt:
-            nextStatus === "PAID"
-              ? currentTransaction.paidAt ?? new Date()
-              : null,
-        },
-      });
-
-      if (!isCreditCardPayment) {
-        await applyAccountImpact({
-          accountId,
-          type,
-          status: nextStatus,
-          amount: installmentAmount,
-        });
-      }
-    }
-
-    if (shouldUpdateFuture && oldSeriesMetadata && requestedTotalInstallments) {
-      const previousSeriesItems = seriesItemsWithMetadata.filter(
-        (item) =>
-          item.metadata.installmentNumber <
-            oldSeriesMetadata.installmentNumber &&
-          item.metadata.installmentNumber <= requestedTotalInstallments,
-      );
-
-      for (const item of previousSeriesItems) {
-        await prisma.transaction.update({
+    await prisma.$transaction(
+      async (tx) => {
+        const oldTransaction = await tx.transaction.findFirst({
           where: {
-            id: item.transaction.id,
+            id: transactionId,
+            familyId,
           },
-          data: {
-            notes: buildNotesPreservingMetadata(
-              getCleanUserNotes(item.transaction.notes),
-              buildSeriesMetadataTokens(
-                item.metadata,
-                item.metadata.installmentNumber,
+          select: transactionUpdateSelect,
+        });
+
+        if (!oldTransaction) {
+          throw new Error("Lançamento não encontrado.");
+        }
+
+        const oldSeriesMetadata = getRepeatMetadata(oldTransaction.notes);
+        const shouldUpdateFuture = Boolean(
+          editMode === "future" && oldSeriesMetadata,
+        );
+        const requestedTotalInstallments =
+          shouldUpdateFuture && oldSeriesMetadata
+            ? parseSeriesTotalInstallments(
+                requestedTotalInstallmentsValue,
+                oldSeriesMetadata.totalInstallments,
+                oldSeriesMetadata.installmentNumber,
+              )
+            : oldSeriesMetadata?.totalInstallments ?? null;
+        const installmentAmount =
+          shouldUpdateFuture && oldSeriesMetadata && requestedTotalInstallments
+            ? getSeriesInstallmentAmount(
+                amount,
+                oldSeriesMetadata,
                 requestedTotalInstallments,
-              ),
-            ),
-          },
-        });
-      }
+              )
+            : amount;
+        const statusWasChanged = status !== oldTransaction.status;
+        const baseDueDate =
+          dueDateValue && oldTransaction.dueDate
+            ? createDateFromInput(dueDateValue)
+            : null;
 
-      const canceledItems = seriesItemsWithMetadata.filter(
-        (item) =>
-          item.metadata.installmentNumber > requestedTotalInstallments &&
-          item.transaction.status === "PENDING",
-      );
+        const allSeriesItems =
+          shouldUpdateFuture && oldSeriesMetadata
+            ? (
+                await tx.transaction.findMany({
+                  where: {
+                    familyId,
+                    notes: {
+                      contains: `REPETICAO_ID:${oldSeriesMetadata.repetitionId}`,
+                    },
+                  },
+                  select: transactionUpdateSelect,
+                })
+              )
+                .map((transaction) => ({
+                  transaction,
+                  metadata: getRepeatMetadata(transaction.notes),
+                }))
+                .filter(
+                  (item): item is {
+                    transaction: typeof oldTransaction;
+                    metadata: RepeatMetadata;
+                  } =>
+                    item.metadata?.repetitionId ===
+                    oldSeriesMetadata.repetitionId,
+                )
+                .sort(
+                  (a, b) =>
+                    a.metadata.installmentNumber - b.metadata.installmentNumber,
+                )
+            : [
+                {
+                  transaction: oldTransaction,
+                  metadata: oldSeriesMetadata,
+                },
+              ];
+        const seriesItemsWithMetadata = allSeriesItems.filter(
+          (
+            item,
+          ): item is {
+            transaction: typeof oldTransaction;
+            metadata: RepeatMetadata;
+          } => Boolean(item.metadata),
+        );
 
-      for (const item of canceledItems) {
-        await prisma.transaction.update({
-          where: {
-            id: item.transaction.id,
-          },
-          data: {
-            status: "CANCELED",
-            paidAt: null,
-          },
-        });
-      }
-
-      const lastExistingItem = [...seriesItemsWithMetadata].sort(
-        (a, b) => b.metadata.installmentNumber - a.metadata.installmentNumber,
-      )[0];
-      const lastExistingInstallment =
-        lastExistingItem?.metadata.installmentNumber ??
-        oldSeriesMetadata.installmentNumber;
-
-      if (requestedTotalInstallments > lastExistingInstallment) {
-        for (
-          let installmentNumber = lastExistingInstallment + 1;
-          installmentNumber <= requestedTotalInstallments;
-          installmentNumber += 1
+        if (
+          shouldUpdateFuture &&
+          oldSeriesMetadata &&
+          requestedTotalInstallments
         ) {
+          const paidOutsideNewLimit = seriesItemsWithMetadata.some(
+            (item) =>
+              item.metadata.installmentNumber > requestedTotalInstallments &&
+              item.transaction.status === "PAID",
+          );
+
+          if (paidOutsideNewLimit) {
+            throw new Error(SERIES_PAID_OUTSIDE_LIMIT_ERROR);
+          }
+        }
+
+        const transactionsToUpdate =
+          shouldUpdateFuture &&
+          oldSeriesMetadata &&
+          requestedTotalInstallments
+            ? seriesItemsWithMetadata.filter(
+                (item) =>
+                  item.metadata.installmentNumber >=
+                    oldSeriesMetadata.installmentNumber &&
+                  item.metadata.installmentNumber <= requestedTotalInstallments,
+              )
+            : allSeriesItems;
+
+        const currentInstallmentLabel = oldSeriesMetadata
+          ? `${oldSeriesMetadata.installmentNumber}/${oldSeriesMetadata.totalInstallments}`
+          : "";
+
+        const transactionUpdates = transactionsToUpdate.map((item) => {
+          const currentTransaction = item.transaction;
           const installmentOffset =
-            installmentNumber - oldSeriesMetadata.installmentNumber;
-          const newTransactionDate = addMonths(
+            item.metadata && oldSeriesMetadata
+              ? item.metadata.installmentNumber -
+                oldSeriesMetadata.installmentNumber
+              : 0;
+          const nextStatus = statusWasChanged
+            ? status
+            : currentTransaction.status;
+          const nextTransactionDate = addMonths(
             baseTransactionDate,
             installmentOffset,
           );
-          const newDueDate = baseDueDate
+          const nextDueDate = baseDueDate
             ? addMonths(baseDueDate, installmentOffset)
             : null;
-          const installmentLabel = `${installmentNumber}/${requestedTotalInstallments}`;
+          const targetInstallmentLabel = item.metadata
+            ? `${item.metadata.installmentNumber}/${item.metadata.totalInstallments}`
+            : "";
+          const nextDescription =
+            shouldUpdateFuture && item.metadata && oldSeriesMetadata
+              ? buildSeriesDescription(
+                  description,
+                  currentInstallmentLabel,
+                  targetInstallmentLabel,
+                )
+              : description;
+          const nextNotes = item.metadata
+            ? buildNotesPreservingMetadata(
+                notes,
+                buildSeriesMetadataTokens(
+                  item.metadata,
+                  item.metadata.installmentNumber,
+                  requestedTotalInstallments ?? item.metadata.totalInstallments,
+                ),
+              )
+            : notes;
 
-          await prisma.transaction.create({
+          return {
+            currentTransaction,
+            nextStatus,
+            nextDescription,
+            nextNotes,
+            nextTransactionDate,
+            nextDueDate,
+          };
+        });
+
+        const previousMetadataUpdates =
+          shouldUpdateFuture &&
+          oldSeriesMetadata &&
+          requestedTotalInstallments
+            ? seriesItemsWithMetadata
+                .filter(
+                  (item) =>
+                    item.metadata.installmentNumber <
+                      oldSeriesMetadata.installmentNumber &&
+                    item.metadata.installmentNumber <=
+                      requestedTotalInstallments,
+                )
+                .map((item) => ({
+                  id: item.transaction.id,
+                  notes: buildNotesPreservingMetadata(
+                    getCleanUserNotes(item.transaction.notes),
+                    buildSeriesMetadataTokens(
+                      item.metadata,
+                      item.metadata.installmentNumber,
+                      requestedTotalInstallments,
+                    ),
+                  ),
+                }))
+            : [];
+
+        const canceledIds =
+          shouldUpdateFuture && requestedTotalInstallments
+            ? seriesItemsWithMetadata
+                .filter(
+                  (item) =>
+                    item.metadata.installmentNumber >
+                      requestedTotalInstallments &&
+                    item.transaction.status === "PENDING",
+                )
+                .map((item) => item.transaction.id)
+            : [];
+
+        const lastExistingItem = [...seriesItemsWithMetadata].sort(
+          (a, b) => b.metadata.installmentNumber - a.metadata.installmentNumber,
+        )[0];
+        const lastExistingInstallment =
+          lastExistingItem?.metadata.installmentNumber ??
+          oldSeriesMetadata?.installmentNumber ??
+          0;
+
+        const transactionsToCreate =
+          shouldUpdateFuture &&
+          oldSeriesMetadata &&
+          requestedTotalInstallments &&
+          requestedTotalInstallments > lastExistingInstallment
+            ? Array.from(
+                {
+                  length: requestedTotalInstallments - lastExistingInstallment,
+                },
+                (_, index) => {
+                  const installmentNumber = lastExistingInstallment + index + 1;
+                  const installmentOffset =
+                    installmentNumber - oldSeriesMetadata.installmentNumber;
+                  const installmentLabel = `${installmentNumber}/${requestedTotalInstallments}`;
+
+                  return {
+                    familyId,
+                    userId,
+                    accountId,
+                    creditCardId,
+                    categoryId,
+                    type,
+                    description: buildSeriesDescription(
+                      description,
+                      currentInstallmentLabel,
+                      installmentLabel,
+                    ),
+                    amount: installmentAmount,
+                    transactionDate: addMonths(
+                      baseTransactionDate,
+                      installmentOffset,
+                    ),
+                    dueDate: baseDueDate
+                      ? addMonths(baseDueDate, installmentOffset)
+                      : null,
+                    status: "PENDING" as TransactionStatus,
+                    paymentMethod,
+                    notes: buildNotesPreservingMetadata(
+                      notes,
+                      buildSeriesMetadataTokens(
+                        oldSeriesMetadata,
+                        installmentNumber,
+                        requestedTotalInstallments,
+                      ),
+                    ),
+                    paidAt: null,
+                  };
+                },
+              )
+            : [];
+
+        const accountImpactUpdates = transactionUpdates.flatMap((item) => {
+          const updates = [];
+          const oldImpact =
+            item.currentTransaction.paymentMethod === "CREDIT_CARD"
+              ? 0
+              : getAccountImpactAmount({
+                  accountId: item.currentTransaction.accountId,
+                  type: item.currentTransaction.type,
+                  status: item.currentTransaction.status,
+                  amount: Number(item.currentTransaction.amount),
+                });
+          const nextImpact = isCreditCardPayment
+            ? 0
+            : getAccountImpactAmount({
+                accountId,
+                type,
+                status: item.nextStatus,
+                amount: installmentAmount,
+              });
+
+          if (item.currentTransaction.accountId && oldImpact !== 0) {
+            updates.push(
+              tx.account.update({
+                where: {
+                  id: item.currentTransaction.accountId,
+                },
+                data: {
+                  currentBalance: {
+                    decrement: oldImpact,
+                  },
+                },
+              }),
+            );
+          }
+
+          if (accountId && nextImpact !== 0) {
+            updates.push(
+              tx.account.update({
+                where: {
+                  id: accountId,
+                },
+                data: {
+                  currentBalance: {
+                    increment: nextImpact,
+                  },
+                },
+              }),
+            );
+          }
+
+          return updates;
+        });
+
+        const updateOperations = transactionUpdates.map((item) =>
+          tx.transaction.update({
+            where: {
+              id: item.currentTransaction.id,
+            },
             data: {
-              familyId: session.familyId,
-              userId: session.userId,
               accountId,
               creditCardId,
               categoryId,
               type,
-              description: buildSeriesDescription(
-                description,
-                `${oldSeriesMetadata.installmentNumber}/${oldSeriesMetadata.totalInstallments}`,
-                installmentLabel,
-              ),
+              description: item.nextDescription,
               amount: installmentAmount,
-              transactionDate: newTransactionDate,
-              dueDate: newDueDate,
-              status: "PENDING",
+              transactionDate: item.nextTransactionDate,
+              dueDate: item.nextDueDate,
+              status: item.nextStatus,
               paymentMethod,
-              notes: buildNotesPreservingMetadata(
-                notes,
-                buildSeriesMetadataTokens(
-                  oldSeriesMetadata,
-                  installmentNumber,
-                  requestedTotalInstallments,
-                ),
-              ),
-              paidAt: null,
+              notes: item.nextNotes,
+              paidAt:
+                item.nextStatus === "PAID"
+                  ? item.currentTransaction.paidAt ?? new Date()
+                  : null,
             },
-          });
-        }
-      }
-    }
-    });
+          }),
+        );
+
+        const previousMetadataOperations = previousMetadataUpdates.map((item) =>
+          tx.transaction.update({
+            where: {
+              id: item.id,
+            },
+            data: {
+              notes: item.notes,
+            },
+          }),
+        );
+
+        await Promise.all([
+          ...accountImpactUpdates,
+          ...updateOperations,
+          ...previousMetadataOperations,
+          canceledIds.length > 0
+            ? tx.transaction.updateMany({
+                where: {
+                  id: {
+                    in: canceledIds,
+                  },
+                  familyId,
+                  status: "PENDING",
+                },
+                data: {
+                  status: "CANCELED",
+                  paidAt: null,
+                },
+              })
+            : Promise.resolve(null),
+          transactionsToCreate.length > 0
+            ? tx.transaction.createMany({
+                data: transactionsToCreate,
+              })
+            : Promise.resolve(null),
+        ]);
+      },
+      {
+        timeout: 20000,
+      },
+    );
   } catch (error) {
     if (
       error instanceof Error &&
