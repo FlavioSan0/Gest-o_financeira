@@ -81,6 +81,9 @@ export function TransactionEditFormMobile({
   const editModeInputRef = useRef<HTMLInputElement>(null);
   const confirmedSubmitRef = useRef(false);
   const [showSeriesDialog, setShowSeriesDialog] = useState(false);
+  const [seriesTotalInstallments, setSeriesTotalInstallments] = useState(
+    String(transaction.series?.totalInstallments ?? 1),
+  );
   const transactionType = defaultType ?? transaction.type;
   const isIncome = transactionType === "INCOME";
   const isExpense = transactionType === "EXPENSE";
@@ -100,6 +103,11 @@ export function TransactionEditFormMobile({
   );
 
   const isCreditCardPayment = isExpense && paymentMethod === "CREDIT_CARD";
+  const parsedSeriesTotalInstallments = Number(seriesTotalInstallments);
+  const seriesTotalPreview =
+    transaction.series && Number.isFinite(parsedSeriesTotalInstallments)
+      ? parsedSeriesTotalInstallments
+      : transaction.series?.totalInstallments;
 
   function handlePaymentMethodChange(method: PaymentMethod) {
     setPaymentMethod(method);
@@ -156,6 +164,11 @@ export function TransactionEditFormMobile({
         type="hidden"
         name="editMode"
         value="single"
+      />
+      <input
+        type="hidden"
+        name="seriesTotalInstallments"
+        value={seriesTotalInstallments}
       />
 
       {isIncome && <input type="hidden" name="status" value="PAID" />}
@@ -430,6 +443,54 @@ export function TransactionEditFormMobile({
             </p>
 
             <div className="mt-5 grid gap-3">
+              <div className="rounded-3xl border border-white/10 bg-black/25 p-4">
+                <label className="mobile-form-label">
+                  Quantidade total (somente este)
+                </label>
+
+                <input
+                  type="number"
+                  value={transaction.series.totalInstallments}
+                  disabled
+                  className="finance-input opacity-60"
+                />
+
+                <label className="mobile-form-label mt-4">
+                  Quantidade total (este e próximos)
+                </label>
+
+                <input
+                  type="number"
+                  min={transaction.series.currentInstallment}
+                  value={seriesTotalInstallments}
+                  onChange={(event) =>
+                    setSeriesTotalInstallments(event.target.value)
+                  }
+                  className="finance-input"
+                />
+
+                <p className="mt-3 text-xs leading-5 app-muted-text">
+                  Somente este mantém a quantidade bloqueada. Em este e
+                  próximos, a série passará de{" "}
+                  {transaction.series.totalInstallments} para{" "}
+                  {seriesTotalPreview} parcelas.
+                </p>
+
+                {seriesTotalPreview &&
+                seriesTotalPreview > transaction.series.totalInstallments ? (
+                  <p className="mt-2 text-xs font-bold text-emerald-300">
+                    Novas parcelas serão criadas como pendentes.
+                  </p>
+                ) : null}
+
+                {seriesTotalPreview &&
+                seriesTotalPreview < transaction.series.totalInstallments ? (
+                  <p className="mt-2 text-xs font-bold text-amber-300">
+                    Parcelas futuras excedentes serão canceladas se pendentes.
+                  </p>
+                ) : null}
+              </div>
+
               <button
                 type="button"
                 onClick={() => submitWithEditMode("single")}

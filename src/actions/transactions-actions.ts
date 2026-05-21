@@ -48,6 +48,15 @@ type TransactionCreateInput = {
   notes: string | null;
 };
 
+type RepeatMetadata = {
+  repetitionId: string;
+  repetitionType: RepeatMode;
+  installmentNumber: number;
+  totalInstallments: number;
+  amountMode: AmountMode;
+  metadataTokens: string[];
+};
+
 function getRequiredValue(formData: FormData, field: string) {
   const value = formData.get(field);
 
@@ -290,6 +299,18 @@ function getRepeatMetadata(notes: string | null | undefined) {
     .find((line) => line.startsWith("PARCELA:"))
     ?.replace("PARCELA:", "")
     .trim();
+  const repetitionType = getRepeatMode(
+    metadataTokens
+      .find((line) => line.startsWith("REPETICAO_TIPO:"))
+      ?.replace("REPETICAO_TIPO:", "")
+      .trim() ?? null,
+  );
+  const amountMode = getAmountMode(
+    metadataTokens
+      .find((line) => line.startsWith("VALOR_MODO:"))
+      ?.replace("VALOR_MODO:", "")
+      .trim() ?? null,
+  );
   const installmentMatch = installment?.match(/^(\d+)\/(\d+)$/);
 
   if (!repetitionId || !installmentMatch) {
@@ -298,10 +319,25 @@ function getRepeatMetadata(notes: string | null | undefined) {
 
   return {
     repetitionId,
+    repetitionType,
     installmentNumber: Number(installmentMatch[1]),
     totalInstallments: Number(installmentMatch[2]),
+    amountMode,
     metadataTokens,
   };
+}
+
+function getCleanUserNotes(notes: string | null | undefined) {
+  return (notes ?? "")
+    .split(/\r?\n/)
+    .map((line) => line.trim())
+    .filter(
+      (line) =>
+        line !== "" &&
+        !/^(REPETICAO_ID:|REPETICAO_TIPO:|PARCELA:|VALOR_MODO:)/.test(line),
+    )
+    .join("\n")
+    .trim();
 }
 
 function buildNotesPreservingMetadata(
@@ -309,6 +345,51 @@ function buildNotesPreservingMetadata(
   metadataTokens: string[],
 ) {
   return buildNotesWithMetadata(userNotes, metadataTokens);
+}
+
+function buildSeriesMetadataTokens(
+  metadata: RepeatMetadata,
+  installmentNumber: number,
+  totalInstallments: number,
+) {
+  return [
+    `REPETICAO_ID:${metadata.repetitionId}`,
+    `REPETICAO_TIPO:${metadata.repetitionType}`,
+    `PARCELA:${installmentNumber}/${totalInstallments}`,
+    `VALOR_MODO:${metadata.amountMode}`,
+  ];
+}
+
+function getSeriesInstallmentAmount(
+  amount: number,
+  metadata: RepeatMetadata | null,
+  totalInstallments: number,
+) {
+  if (metadata?.amountMode === "TOTAL") {
+    return Number((amount / totalInstallments).toFixed(2));
+  }
+
+  return amount;
+}
+
+function parseSeriesTotalInstallments(
+  value: string | null,
+  fallback: number,
+  currentInstallment: number,
+) {
+  const parsed = parsePositiveInteger(value, fallback);
+
+  if (parsed < 1) {
+    throw new Error("A quantidade total precisa ser maior que zero.");
+  }
+
+  if (parsed < currentInstallment) {
+    throw new Error(
+      "A quantidade total não pode ser menor que a parcela atual.",
+    );
+  }
+
+  return parsed;
 }
 
 function getSeriesEditMode(value: string | null) {
@@ -536,6 +617,10 @@ export async function updateTransactionAction(formData: FormData) {
 
   const transactionId = getRequiredValue(formData, "transactionId");
   const editMode = getSeriesEditMode(getOptionalValue(formData, "editMode"));
+  const requestedTotalInstallmentsValue = getOptionalValue(
+    formData,
+    "seriesTotalInstallments",
+  );
   const type = getRequiredValue(formData, "type") as TransactionType;
   const description = getRequiredValue(formData, "description");
   const amount = parseCurrencyValue(getRequiredValue(formData, "amount"));
@@ -579,6 +664,22 @@ export async function updateTransactionAction(formData: FormData) {
 
     const oldSeriesMetadata = getRepeatMetadata(oldTransaction.notes);
     const shouldUpdateFuture = editMode === "future" && oldSeriesMetadata;
+    const requestedTotalInstallments =
+      shouldUpdateFuture && oldSeriesMetadata
+        ? parseSeriesTotalInstallments(
+            requestedTotalInstallmentsValue,
+            oldSeriesMetadata.totalInstallments,
+            oldSeriesMetadata.installmentNumber,
+          )
+        : oldSeriesMetadata?.totalInstallments ?? null;
+    const installmentAmount =
+      shouldUpdateFuture && oldSeriesMetadata && requestedTotalInstallments
+        ? getSeriesInstallmentAmount(
+            amount,
+            oldSeriesMetadata,
+            requestedTotalInstallments,
+          )
+        : amount;
     const statusWasChanged = status !== oldTransaction.status;
     const baseTransactionDate = createDateFromInput(transactionDate);
     const baseDueDate =
@@ -586,7 +687,7 @@ export async function updateTransactionAction(formData: FormData) {
         ? createDateFromInput(dueDateValue)
         : null;
 
-    const transactionsToUpdate = shouldUpdateFuture
+    const seriesItems = shouldUpdateFuture
       ? (
           await prisma.transaction.findMany({
             where: {
@@ -604,7 +705,7 @@ export async function updateTransactionAction(formData: FormData) {
           .filter(
             (item): item is {
               transaction: typeof oldTransaction;
-              metadata: NonNullable<ReturnType<typeof getRepeatMetadata>>;
+              metadata: RepeatMetadata;
             } => {
               if (!item.metadata) {
                 return false;
@@ -628,6 +729,33 @@ export async function updateTransactionAction(formData: FormData) {
             metadata: oldSeriesMetadata,
           },
         ];
+    const seriesItemsWithMetadata = seriesItems.filter(
+      (item): item is {
+        transaction: typeof oldTransaction;
+        metadata: RepeatMetadata;
+      } => Boolean(item.metadata),
+    );
+
+    if (shouldUpdateFuture && oldSeriesMetadata && requestedTotalInstallments) {
+      const paidOutsideNewLimit = seriesItemsWithMetadata.some(
+        (item) =>
+          item.metadata.installmentNumber > requestedTotalInstallments &&
+          item.transaction.status === "PAID",
+      );
+
+      if (paidOutsideNewLimit) {
+        throw new Error(
+          "Não é possível reduzir a série porque já existem parcelas pagas fora do novo limite.",
+        );
+      }
+    }
+
+    const transactionsToUpdate =
+      shouldUpdateFuture && requestedTotalInstallments
+        ? seriesItemsWithMetadata.filter(
+            (item) => item.metadata.installmentNumber <= requestedTotalInstallments,
+          )
+        : seriesItems;
 
     for (const item of transactionsToUpdate) {
       const currentTransaction = item.transaction;
@@ -659,7 +787,14 @@ export async function updateTransactionAction(formData: FormData) {
             )
           : description;
       const nextNotes = item.metadata
-        ? buildNotesPreservingMetadata(notes, item.metadata.metadataTokens)
+        ? buildNotesPreservingMetadata(
+            notes,
+            buildSeriesMetadataTokens(
+              item.metadata,
+              item.metadata.installmentNumber,
+              requestedTotalInstallments ?? item.metadata.totalInstallments,
+            ),
+          )
         : notes;
 
       if (currentTransaction.paymentMethod !== "CREDIT_CARD") {
@@ -681,7 +816,7 @@ export async function updateTransactionAction(formData: FormData) {
           categoryId,
           type,
           description: nextDescription,
-          amount,
+          amount: installmentAmount,
           transactionDate: nextTransactionDate,
           dueDate: nextDueDate,
           status: nextStatus,
@@ -699,8 +834,109 @@ export async function updateTransactionAction(formData: FormData) {
           accountId,
           type,
           status: nextStatus,
-          amount,
+          amount: installmentAmount,
         });
+      }
+    }
+
+    if (shouldUpdateFuture && oldSeriesMetadata && requestedTotalInstallments) {
+      const previousSeriesItems = seriesItemsWithMetadata.filter(
+        (item) =>
+          item.metadata.installmentNumber <
+            oldSeriesMetadata.installmentNumber &&
+          item.metadata.installmentNumber <= requestedTotalInstallments,
+      );
+
+      for (const item of previousSeriesItems) {
+        await prisma.transaction.update({
+          where: {
+            id: item.transaction.id,
+          },
+          data: {
+            notes: buildNotesPreservingMetadata(
+              getCleanUserNotes(item.transaction.notes),
+              buildSeriesMetadataTokens(
+                item.metadata,
+                item.metadata.installmentNumber,
+                requestedTotalInstallments,
+              ),
+            ),
+          },
+        });
+      }
+
+      const canceledItems = seriesItemsWithMetadata.filter(
+        (item) =>
+          item.metadata.installmentNumber > requestedTotalInstallments &&
+          item.transaction.status === "PENDING",
+      );
+
+      for (const item of canceledItems) {
+        await prisma.transaction.update({
+          where: {
+            id: item.transaction.id,
+          },
+          data: {
+            status: "CANCELED",
+            paidAt: null,
+          },
+        });
+      }
+
+      const lastExistingItem = [...seriesItemsWithMetadata].sort(
+        (a, b) => b.metadata.installmentNumber - a.metadata.installmentNumber,
+      )[0];
+      const lastExistingInstallment =
+        lastExistingItem?.metadata.installmentNumber ??
+        oldSeriesMetadata.installmentNumber;
+
+      if (requestedTotalInstallments > lastExistingInstallment) {
+        for (
+          let installmentNumber = lastExistingInstallment + 1;
+          installmentNumber <= requestedTotalInstallments;
+          installmentNumber += 1
+        ) {
+          const installmentOffset =
+            installmentNumber - oldSeriesMetadata.installmentNumber;
+          const newTransactionDate = addMonths(
+            baseTransactionDate,
+            installmentOffset,
+          );
+          const newDueDate = baseDueDate
+            ? addMonths(baseDueDate, installmentOffset)
+            : null;
+          const installmentLabel = `${installmentNumber}/${requestedTotalInstallments}`;
+
+          await prisma.transaction.create({
+            data: {
+              familyId: session.familyId,
+              userId: session.userId,
+              accountId,
+              creditCardId,
+              categoryId,
+              type,
+              description: buildSeriesDescription(
+                description,
+                `${oldSeriesMetadata.installmentNumber}/${oldSeriesMetadata.totalInstallments}`,
+                installmentLabel,
+              ),
+              amount: installmentAmount,
+              transactionDate: newTransactionDate,
+              dueDate: newDueDate,
+              status: "PENDING",
+              paymentMethod,
+              notes: buildNotesPreservingMetadata(
+                notes,
+                buildSeriesMetadataTokens(
+                  oldSeriesMetadata,
+                  installmentNumber,
+                  requestedTotalInstallments,
+                ),
+              ),
+              paidAt: null,
+            },
+          });
+        }
       }
     }
   });
