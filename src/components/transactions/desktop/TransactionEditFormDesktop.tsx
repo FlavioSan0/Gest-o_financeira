@@ -1,8 +1,8 @@
 "use client";
 
-import { type FormEvent, useMemo, useRef, useState } from "react";
+import { useMemo, useState } from "react";
 import Link from "next/link";
-import { ArrowLeft, Save } from "lucide-react";
+import { ArrowLeft, Repeat, Save } from "lucide-react";
 import { updateTransactionAction } from "@/actions/transactions-actions";
 
 type AccountOption = {
@@ -26,6 +26,7 @@ type CreditCardOption = {
 };
 
 type TransactionType = "INCOME" | "EXPENSE";
+type EditScope = "SINGLE" | "THIS_AND_NEXT";
 
 type PaymentMethod =
   | "PIX"
@@ -52,8 +53,10 @@ type TransactionEditData = {
   notes: string;
   series: {
     repetitionId: string;
+    repetitionType?: string;
     currentInstallment: number;
     totalInstallments: number;
+    amountMode?: string;
   } | null;
 };
 
@@ -63,7 +66,13 @@ type TransactionEditFormDesktopProps = {
   categories: CategoryOption[];
   creditCards: CreditCardOption[];
   defaultType?: TransactionType;
+  editScope: EditScope;
+  errorMessage?: string | null;
 };
+
+function getAmountModeLabel(amountMode?: string) {
+  return amountMode === "TOTAL" ? "valor total dividido" : "valor por parcela";
+}
 
 export function TransactionEditFormDesktop({
   transaction,
@@ -71,18 +80,15 @@ export function TransactionEditFormDesktop({
   categories,
   creditCards,
   defaultType,
+  editScope,
+  errorMessage,
 }: TransactionEditFormDesktopProps) {
-  const formRef = useRef<HTMLFormElement>(null);
-  const editModeInputRef = useRef<HTMLInputElement>(null);
-  const confirmedSubmitRef = useRef(false);
-  const [showSeriesDialog, setShowSeriesDialog] = useState(false);
   const [seriesTotalInstallments, setSeriesTotalInstallments] = useState(
     String(transaction.series?.totalInstallments ?? 1),
   );
   const [transactionType, setTransactionType] = useState<TransactionType>(
     defaultType ?? transaction.type,
   );
-
   const [paymentMethod, setPaymentMethod] = useState<PaymentMethod>(
     transactionType === "INCOME" && transaction.paymentMethod === "CREDIT_CARD"
       ? "PIX"
@@ -92,6 +98,14 @@ export function TransactionEditFormDesktop({
   const isIncome = transactionType === "INCOME";
   const isExpense = transactionType === "EXPENSE";
   const isCreditCardPayment = isExpense && paymentMethod === "CREDIT_CARD";
+  const canEditSeriesQuantity =
+    Boolean(transaction.series) && editScope === "THIS_AND_NEXT";
+  const editModeValue = editScope === "THIS_AND_NEXT" ? "future" : "single";
+  const parsedSeriesTotalInstallments = Number(seriesTotalInstallments);
+  const seriesTotalPreview =
+    transaction.series && Number.isFinite(parsedSeriesTotalInstallments)
+      ? parsedSeriesTotalInstallments
+      : transaction.series?.totalInstallments;
 
   const filteredCategories = useMemo(() => {
     return categories.filter((category) => category.type === transactionType);
@@ -100,25 +114,20 @@ export function TransactionEditFormDesktop({
   const currentCategoryIsCompatible = filteredCategories.some(
     (category) => category.id === transaction.categoryId,
   );
-  const parsedSeriesTotalInstallments = Number(seriesTotalInstallments);
-  const seriesTotalPreview =
-    transaction.series && Number.isFinite(parsedSeriesTotalInstallments)
-      ? parsedSeriesTotalInstallments
-      : transaction.series?.totalInstallments;
 
   const paymentOptions: { value: PaymentMethod; label: string }[] = isIncome
     ? [
         { value: "PIX", label: "Pix" },
         { value: "CASH", label: "Dinheiro" },
-        { value: "BANK_TRANSFER", label: "Transferência" },
+        { value: "BANK_TRANSFER", label: "Transferencia" },
         { value: "OTHER", label: "Outro" },
       ]
     : [
         { value: "PIX", label: "Pix" },
         { value: "CASH", label: "Dinheiro" },
-        { value: "DEBIT_CARD", label: "Cartão de débito" },
-        { value: "CREDIT_CARD", label: "Cartão de crédito" },
-        { value: "BANK_TRANSFER", label: "Transferência" },
+        { value: "DEBIT_CARD", label: "Cartao de debito" },
+        { value: "CREDIT_CARD", label: "Cartao de credito" },
+        { value: "BANK_TRANSFER", label: "Transferencia" },
         { value: "BOLETO", label: "Boleto" },
         { value: "OTHER", label: "Outro" },
       ];
@@ -131,41 +140,11 @@ export function TransactionEditFormDesktop({
     }
   }
 
-  function handleSubmit(event: FormEvent<HTMLFormElement>) {
-    if (transaction.series && !confirmedSubmitRef.current) {
-      event.preventDefault();
-      setShowSeriesDialog(true);
-      return;
-    }
-
-    confirmedSubmitRef.current = false;
-  }
-
-  function submitWithEditMode(mode: "single" | "future") {
-    if (editModeInputRef.current) {
-      editModeInputRef.current.value = mode;
-    }
-
-    confirmedSubmitRef.current = true;
-    setShowSeriesDialog(false);
-    formRef.current?.requestSubmit();
-  }
-
   return (
-    <form
-      ref={formRef}
-      action={updateTransactionAction}
-      onSubmit={handleSubmit}
-      className="grid gap-6"
-    >
+    <form action={updateTransactionAction} className="grid gap-6">
       <input type="hidden" name="transactionId" value={transaction.id} />
       <input type="hidden" name="type" value={transactionType} />
-      <input
-        ref={editModeInputRef}
-        type="hidden"
-        name="editMode"
-        value="single"
-      />
+      <input type="hidden" name="editMode" value={editModeValue} />
       <input
         type="hidden"
         name="seriesTotalInstallments"
@@ -181,31 +160,45 @@ export function TransactionEditFormDesktop({
             className="inline-flex items-center gap-2 text-sm font-bold app-faint-text transition hover:text-white"
           >
             <ArrowLeft className="h-4 w-4" />
-            Voltar para lançamentos
+            Voltar para lancamentos
           </Link>
 
           <h2 className="mt-3 text-3xl font-black tracking-[-0.04em] text-white">
-            Editar lançamento
+            Editar lancamento
           </h2>
 
           <p className="mt-2 text-sm app-muted-text">
             {isIncome
               ? "Ajuste os dados dessa entrada recebida."
-              : "Ajuste os dados dessa saída, conta ou pagamento."}
+              : "Ajuste os dados dessa saida, conta ou pagamento."}
           </p>
+
+          {transaction.series ? (
+            <p className="mt-2 text-xs font-bold text-cyan-200">
+              {editScope === "THIS_AND_NEXT"
+                ? "Editando este e os proximos lancamentos"
+                : "Editando somente este lancamento"}
+            </p>
+          ) : null}
         </div>
 
         <button type="submit" className="app-button-primary">
           <Save className="h-4 w-4" />
-          Salvar alterações
+          Salvar alteracoes
         </button>
       </div>
+
+      {errorMessage ? (
+        <div className="rounded-3xl border border-red-500/20 bg-red-500/10 p-4 text-sm font-bold text-red-300">
+          {errorMessage}
+        </div>
+      ) : null}
 
       <section className="app-card p-6">
         <div className="grid gap-6">
           <div>
             <label className="mb-3 block text-sm font-bold text-white">
-              Tipo de lançamento
+              Tipo de lancamento
             </label>
 
             <div className="grid gap-3 md:grid-cols-2">
@@ -219,9 +212,8 @@ export function TransactionEditFormDesktop({
                 }
               >
                 <span className="block text-sm font-black finance-expense">
-                  Saída
+                  Saida
                 </span>
-
                 <span className="mt-1 block text-xs app-faint-text">
                   Despesas, compras, contas e pagamentos.
                 </span>
@@ -239,29 +231,94 @@ export function TransactionEditFormDesktop({
                 <span className="block text-sm font-black finance-income">
                   Entrada
                 </span>
-
                 <span className="mt-1 block text-xs app-faint-text">
-                  Salário, renda extra, recebimentos e ganhos.
+                  Salario, renda extra, recebimentos e ganhos.
                 </span>
               </button>
             </div>
           </div>
 
+          {transaction.series ? (
+            <section className="rounded-[1.75rem] border border-white/10 bg-black/20 p-5">
+              <div className="flex items-start gap-3">
+                <div className="app-icon-box h-11 w-11">
+                  <Repeat className="h-5 w-5" />
+                </div>
+
+                <div>
+                  <h3 className="text-lg font-black tracking-[-0.03em] text-white">
+                    Repeticao da serie
+                  </h3>
+                  <p className="mt-1 text-sm app-faint-text">
+                    Parcela {transaction.series.currentInstallment}/
+                    {transaction.series.totalInstallments} ·{" "}
+                    {getAmountModeLabel(transaction.series.amountMode)}
+                  </p>
+                </div>
+              </div>
+
+              <div className="mt-5 grid gap-5 md:grid-cols-2">
+                <div>
+                  <label className="mb-2 block text-sm font-bold text-white">
+                    Quantidade total
+                  </label>
+                  <input
+                    type="number"
+                    min={transaction.series.currentInstallment}
+                    value={seriesTotalInstallments}
+                    disabled={!canEditSeriesQuantity}
+                    onChange={(event) =>
+                      setSeriesTotalInstallments(event.target.value)
+                    }
+                    className={
+                      canEditSeriesQuantity
+                        ? "finance-input"
+                        : "finance-input opacity-60"
+                    }
+                  />
+
+                  {!canEditSeriesQuantity ? (
+                    <p className="mt-2 text-xs text-amber-300">
+                      Para alterar a quantidade, edite este e os proximos.
+                    </p>
+                  ) : null}
+                </div>
+
+                <div className="rounded-3xl border border-white/10 bg-white/5 p-4 text-sm leading-6 app-muted-text">
+                  <p>
+                    A serie passara de {transaction.series.totalInstallments}{" "}
+                    para {seriesTotalPreview} parcelas.
+                  </p>
+
+                  {seriesTotalPreview &&
+                  seriesTotalPreview > transaction.series.totalInstallments ? (
+                    <p className="mt-2 font-bold text-emerald-300">
+                      Novas parcelas serao criadas como pendentes.
+                    </p>
+                  ) : null}
+
+                  {seriesTotalPreview &&
+                  seriesTotalPreview < transaction.series.totalInstallments ? (
+                    <p className="mt-2 font-bold text-amber-300">
+                      Parcelas futuras excedentes serao canceladas se estiverem
+                      pendentes.
+                    </p>
+                  ) : null}
+                </div>
+              </div>
+            </section>
+          ) : null}
+
           <div className="grid gap-5 md:grid-cols-2">
             <div>
               <label className="mb-2 block text-sm font-bold text-white">
-                Descrição
+                Descricao
               </label>
-
               <input
                 required
                 name="description"
                 defaultValue={transaction.description}
-                placeholder={
-                  isIncome
-                    ? "Ex: Salário, freelance, renda extra..."
-                    : "Ex: Mercado, internet, combustível..."
-                }
+                placeholder={isIncome ? "Ex: Salario" : "Ex: Mercado"}
                 className="finance-input"
               />
             </div>
@@ -270,7 +327,6 @@ export function TransactionEditFormDesktop({
               <label className="mb-2 block text-sm font-bold text-white">
                 Valor
               </label>
-
               <input
                 required
                 name="amount"
@@ -283,9 +339,8 @@ export function TransactionEditFormDesktop({
 
             <div>
               <label className="mb-2 block text-sm font-bold text-white">
-                {isIncome ? "Data de recebimento" : "Data do lançamento"}
+                {isIncome ? "Data de recebimento" : "Data do lancamento"}
               </label>
-
               <input
                 required
                 type="date"
@@ -300,7 +355,6 @@ export function TransactionEditFormDesktop({
                 <label className="mb-2 block text-sm font-bold text-white">
                   Data de vencimento
                 </label>
-
                 <input
                   type="date"
                   name="dueDate"
@@ -315,7 +369,6 @@ export function TransactionEditFormDesktop({
                 <label className="mb-2 block text-sm font-bold text-white">
                   Status
                 </label>
-
                 <select
                   name="status"
                   defaultValue={transaction.status}
@@ -334,7 +387,6 @@ export function TransactionEditFormDesktop({
                 <label className="mb-2 block text-sm font-bold text-white">
                   {isIncome ? "Conta de destino" : "Conta"}
                 </label>
-
                 <select
                   name="accountId"
                   defaultValue={transaction.accountId}
@@ -343,7 +395,6 @@ export function TransactionEditFormDesktop({
                   <option value="">
                     {isIncome ? "Selecionar conta de destino" : "Sem conta"}
                   </option>
-
                   {accounts.map((account) => (
                     <option key={account.id} value={account.id}>
                       {account.name}
@@ -356,28 +407,21 @@ export function TransactionEditFormDesktop({
             {isCreditCardPayment && (
               <div>
                 <label className="mb-2 block text-sm font-bold text-white">
-                  Cartão de crédito
+                  Cartao de credito
                 </label>
-
                 <select
                   required
                   name="creditCardId"
                   defaultValue={transaction.creditCardId}
                   className="finance-input"
                 >
-                  <option value="">Selecione um cartão</option>
-
+                  <option value="">Selecione um cartao</option>
                   {creditCards.map((card) => (
                     <option key={card.id} value={card.id}>
-                      {card.name} • {card.bank}
+                      {card.name} · {card.bank}
                     </option>
                   ))}
                 </select>
-
-                <p className="mt-2 text-xs text-purple-400">
-                  Compras no crédito não alteram o saldo da conta agora. Elas
-                  serão usadas para controle de fatura.
-                </p>
               </div>
             )}
 
@@ -385,7 +429,6 @@ export function TransactionEditFormDesktop({
               <label className="mb-2 block text-sm font-bold text-white">
                 Categoria
               </label>
-
               <select
                 name="categoryId"
                 defaultValue={
@@ -394,27 +437,18 @@ export function TransactionEditFormDesktop({
                 className="finance-input"
               >
                 <option value="">Sem categoria</option>
-
                 {filteredCategories.map((category) => (
                   <option key={category.id} value={category.id}>
                     {category.name}
                   </option>
                 ))}
               </select>
-
-              {!currentCategoryIsCompatible && transaction.categoryId && (
-                <p className="mt-2 text-xs text-amber-400">
-                  A categoria anterior pertence a outro tipo de lançamento.
-                  Selecione uma nova categoria antes de salvar.
-                </p>
-              )}
             </div>
 
             <div>
               <label className="mb-2 block text-sm font-bold text-white">
                 {isIncome ? "Forma de recebimento" : "Forma de pagamento"}
               </label>
-
               <select
                 name="paymentMethod"
                 value={paymentMethod}
@@ -434,118 +468,18 @@ export function TransactionEditFormDesktop({
 
           <div>
             <label className="mb-2 block text-sm font-bold text-white">
-              Observações
+              Observacoes
             </label>
-
             <textarea
               name="notes"
               rows={4}
               defaultValue={transaction.notes}
-              placeholder={
-                isIncome
-                  ? "Informações adicionais sobre essa entrada..."
-                  : "Informações adicionais sobre essa saída..."
-              }
+              placeholder="Informacoes adicionais..."
               className="finance-input resize-none"
             />
           </div>
         </div>
       </section>
-
-      {showSeriesDialog && transaction.series ? (
-        <div className="fixed inset-0 z-[120] flex items-center justify-center bg-black/70 px-4 backdrop-blur-sm">
-          <div className="w-full max-w-md rounded-[2rem] border border-white/10 bg-[#050816] p-5 shadow-2xl shadow-black/60">
-            <p className="text-sm font-bold text-cyan-200">
-              Parcela {transaction.series.currentInstallment}/
-              {transaction.series.totalInstallments}
-            </p>
-
-            <h3 className="mt-2 text-xl font-black tracking-[-0.03em] text-white">
-              Como deseja editar?
-            </h3>
-
-            <p className="mt-2 text-sm leading-6 app-muted-text">
-              Este lançamento faz parte de uma série. Você pode alterar apenas
-              esta parcela ou aplicar nos próximos lançamentos da mesma série.
-            </p>
-
-            <div className="mt-5 grid gap-3">
-              <div className="rounded-3xl border border-white/10 bg-black/25 p-4">
-                <label className="mb-2 block text-sm font-bold text-white">
-                  Quantidade total (somente este)
-                </label>
-
-                <input
-                  type="number"
-                  value={transaction.series.totalInstallments}
-                  disabled
-                  className="finance-input opacity-60"
-                />
-
-                <label className="mb-2 mt-4 block text-sm font-bold text-white">
-                  Quantidade total (este e próximos)
-                </label>
-
-                <input
-                  type="number"
-                  min={transaction.series.currentInstallment}
-                  value={seriesTotalInstallments}
-                  onChange={(event) =>
-                    setSeriesTotalInstallments(event.target.value)
-                  }
-                  className="finance-input"
-                />
-
-                <p className="mt-3 text-xs leading-5 app-muted-text">
-                  Somente este mantém a quantidade bloqueada. Em este e
-                  próximos, a série passará de{" "}
-                  {transaction.series.totalInstallments} para{" "}
-                  {seriesTotalPreview} parcelas.
-                </p>
-
-                {seriesTotalPreview &&
-                seriesTotalPreview > transaction.series.totalInstallments ? (
-                  <p className="mt-2 text-xs font-bold text-emerald-300">
-                    Novas parcelas serão criadas como pendentes.
-                  </p>
-                ) : null}
-
-                {seriesTotalPreview &&
-                seriesTotalPreview < transaction.series.totalInstallments ? (
-                  <p className="mt-2 text-xs font-bold text-amber-300">
-                    Parcelas futuras excedentes serão canceladas se estiverem
-                    pendentes.
-                  </p>
-                ) : null}
-              </div>
-
-              <button
-                type="button"
-                onClick={() => submitWithEditMode("single")}
-                className="app-button-primary w-full"
-              >
-                Somente este
-              </button>
-
-              <button
-                type="button"
-                onClick={() => submitWithEditMode("future")}
-                className="app-button-secondary w-full"
-              >
-                Este e próximos
-              </button>
-
-              <button
-                type="button"
-                onClick={() => setShowSeriesDialog(false)}
-                className="rounded-2xl border border-white/10 bg-black/25 px-4 py-3 text-sm font-extrabold text-white/60 transition hover:bg-white/5 hover:text-white"
-              >
-                Cancelar
-              </button>
-            </div>
-          </div>
-        </div>
-      ) : null}
     </form>
   );
 }

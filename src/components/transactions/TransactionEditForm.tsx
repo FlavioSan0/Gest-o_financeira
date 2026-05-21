@@ -32,6 +32,8 @@ type PaymentMethod =
   | "BOLETO"
   | "OTHER";
 
+type EditScope = "SINGLE" | "THIS_AND_NEXT";
+
 type TransactionEditData = {
   id: string;
   familyId: string;
@@ -48,8 +50,10 @@ type TransactionEditData = {
   notes: string;
   series: {
     repetitionId: string;
+    repetitionType?: string;
     currentInstallment: number;
     totalInstallments: number;
+    amountMode?: string;
   } | null;
 };
 
@@ -59,6 +63,8 @@ type TransactionEditFormProps = {
   categories: CategoryOption[];
   creditCards: CreditCardOption[];
   defaultType?: TransactionType;
+  editScope: EditScope;
+  errorMessage?: string | null;
 };
 
 export function TransactionEditForm(props: TransactionEditFormProps) {

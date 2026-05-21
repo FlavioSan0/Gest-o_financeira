@@ -48,6 +48,9 @@ type TransactionCreateInput = {
   notes: string | null;
 };
 
+const SERIES_PAID_OUTSIDE_LIMIT_ERROR = "SERIES_PAID_OUTSIDE_LIMIT";
+const SERIES_INVALID_TOTAL_ERROR = "SERIES_INVALID_TOTAL";
+
 type RepeatMetadata = {
   repetitionId: string;
   repetitionType: RepeatMode;
@@ -384,9 +387,7 @@ function parseSeriesTotalInstallments(
   }
 
   if (parsed < currentInstallment) {
-    throw new Error(
-      "A quantidade total não pode ser menor que a parcela atual.",
-    );
+    throw new Error(SERIES_INVALID_TOTAL_ERROR);
   }
 
   return parsed;
@@ -646,7 +647,8 @@ export async function updateTransactionAction(formData: FormData) {
   const status = (getOptionalValue(formData, "status") ??
     "PAID") as TransactionStatus;
 
-  await prisma.$transaction(async () => {
+  try {
+    await prisma.$transaction(async () => {
     const oldTransaction = await prisma.transaction.findFirst({
       where: {
         id: transactionId,
@@ -744,9 +746,7 @@ export async function updateTransactionAction(formData: FormData) {
       );
 
       if (paidOutsideNewLimit) {
-        throw new Error(
-          "Não é possível reduzir a série porque já existem parcelas pagas fora do novo limite.",
-        );
+        throw new Error(SERIES_PAID_OUTSIDE_LIMIT_ERROR);
       }
     }
 
@@ -939,7 +939,28 @@ export async function updateTransactionAction(formData: FormData) {
         }
       }
     }
-  });
+    });
+  } catch (error) {
+    if (
+      error instanceof Error &&
+      error.message === SERIES_PAID_OUTSIDE_LIMIT_ERROR
+    ) {
+      redirect(
+        `/lancamentos/${transactionId}/editar?scope=THIS_AND_NEXT&error=paid-outside-limit`,
+      );
+    }
+
+    if (
+      error instanceof Error &&
+      error.message === SERIES_INVALID_TOTAL_ERROR
+    ) {
+      redirect(
+        `/lancamentos/${transactionId}/editar?scope=THIS_AND_NEXT&error=invalid-total`,
+      );
+    }
+
+    throw error;
+  }
 
   revalidateFinancialPages(session.familyId);
 

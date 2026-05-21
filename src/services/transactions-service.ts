@@ -114,8 +114,16 @@ function extractRepeatMetadata(notes: string | null | undefined) {
 
   return {
     repetitionId,
+    repetitionType: metadataTokens
+      .find((line) => line.startsWith("REPETICAO_TIPO:"))
+      ?.replace("REPETICAO_TIPO:", "")
+      .trim(),
     currentInstallment: Number(installmentMatch[1]),
     totalInstallments: Number(installmentMatch[2]),
+    amountMode: metadataTokens
+      .find((line) => line.startsWith("VALOR_MODO:"))
+      ?.replace("VALOR_MODO:", "")
+      .trim(),
   };
 }
 
