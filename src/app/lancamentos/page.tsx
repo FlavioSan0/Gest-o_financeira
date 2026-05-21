@@ -1,4 +1,5 @@
 import { AppShell } from "@/components/layout/AppShell";
+import { AutoRefresh } from "@/components/common/AutoRefresh";
 import { TransactionsList } from "@/components/transactions/TransactionsList";
 import {
   getTransactionsList,
@@ -104,6 +105,8 @@ export default async function TransactionsPage({
   return (
     <AppShell>
       <div className="app-container">
+        <AutoRefresh intervalMs={30000} showStatus className="mb-4" />
+
         <TransactionsList
           transactions={data.transactions}
           summary={data.summary}
