@@ -1168,4 +1168,10 @@
     margin-top: 2px;
     gap: 10px;
   }
+
+  .series-scope-actions .app-button-primary,
+  .series-scope-actions .app-button-secondary {
+    display: inline-flex !important;
+    width: 100%;
+  }
 }

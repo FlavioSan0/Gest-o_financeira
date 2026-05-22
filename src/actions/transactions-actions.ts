@@ -157,6 +157,18 @@ function getAccountImpactAmount(input: AccountImpactInput) {
   return input.type === "INCOME" ? input.amount : -input.amount;
 }
 
+function addAccountDelta(
+  accountDeltas: Map<string, number>,
+  accountId: string | null,
+  delta: number,
+) {
+  if (!accountId || delta === 0) {
+    return;
+  }
+
+  accountDeltas.set(accountId, (accountDeltas.get(accountId) ?? 0) + delta);
+}
+
 async function applyAccountImpact(input: AccountImpactInput) {
   const impact = getAccountImpactAmount(input);
 
@@ -645,7 +657,8 @@ export async function updateTransactionAction(formData: FormData) {
   const rawPaymentMethod = getOptionalValue(formData, "paymentMethod") ?? "PIX";
   const paymentMethod = rawPaymentMethod as PaymentMethod;
 
-  const isCreditCardPayment = paymentMethod === "CREDIT_CARD";
+  const isCreditCardPayment =
+    type === "EXPENSE" && paymentMethod === "CREDIT_CARD";
 
   const accountId = isCreditCardPayment
     ? null
@@ -664,25 +677,70 @@ export async function updateTransactionAction(formData: FormData) {
   const userId = session.userId;
   const baseTransactionDate = createDateFromInput(transactionDate);
 
-  await Promise.all([
-    validateAccountBelongsToFamily(accountId, familyId),
-    validateCategoryBelongsToFamily(categoryId, familyId),
-    validateCreditCardBelongsToFamily(creditCardId, familyId),
-  ]);
-
   try {
     await prisma.$transaction(
       async (tx) => {
-        const oldTransaction = await tx.transaction.findFirst({
-          where: {
-            id: transactionId,
-            familyId,
-          },
-          select: transactionUpdateSelect,
-        });
+        const [oldTransaction, account, category, creditCard] =
+          await Promise.all([
+            tx.transaction.findFirst({
+              where: {
+                id: transactionId,
+                familyId,
+              },
+              select: transactionUpdateSelect,
+            }),
+            accountId
+              ? tx.account.findFirst({
+                  where: {
+                    id: accountId,
+                    familyId,
+                    active: true,
+                  },
+                  select: {
+                    id: true,
+                  },
+                })
+              : Promise.resolve(null),
+            categoryId
+              ? tx.category.findFirst({
+                  where: {
+                    id: categoryId,
+                    familyId,
+                    active: true,
+                  },
+                  select: {
+                    id: true,
+                  },
+                })
+              : Promise.resolve(null),
+            creditCardId
+              ? tx.creditCard.findFirst({
+                  where: {
+                    id: creditCardId,
+                    familyId,
+                    active: true,
+                  },
+                  select: {
+                    id: true,
+                  },
+                })
+              : Promise.resolve(null),
+          ]);
 
         if (!oldTransaction) {
           throw new Error("Lançamento não encontrado.");
+        }
+
+        if (accountId && !account) {
+          throw new Error("Conta invÃ¡lida para esta famÃ­lia.");
+        }
+
+        if (categoryId && !category) {
+          throw new Error("Categoria invÃ¡lida para esta famÃ­lia.");
+        }
+
+        if (creditCardId && !creditCard) {
+          throw new Error("CartÃ£o invÃ¡lido para esta famÃ­lia.");
         }
 
         const oldSeriesMetadata = getRepeatMetadata(oldTransaction.notes);
@@ -932,8 +990,9 @@ export async function updateTransactionAction(formData: FormData) {
               )
             : [];
 
-        const accountImpactUpdates = transactionUpdates.flatMap((item) => {
-          const updates = [];
+        const accountDeltas = new Map<string, number>();
+
+        transactionUpdates.forEach((item) => {
           const oldImpact =
             item.currentTransaction.paymentMethod === "CREDIT_CARD"
               ? 0
@@ -952,38 +1011,28 @@ export async function updateTransactionAction(formData: FormData) {
                 amount: installmentAmount,
               });
 
-          if (item.currentTransaction.accountId && oldImpact !== 0) {
-            updates.push(
-              tx.account.update({
-                where: {
-                  id: item.currentTransaction.accountId,
-                },
-                data: {
-                  currentBalance: {
-                    decrement: oldImpact,
-                  },
-                },
-              }),
-            );
-          }
-
-          if (accountId && nextImpact !== 0) {
-            updates.push(
-              tx.account.update({
-                where: {
-                  id: accountId,
-                },
-                data: {
-                  currentBalance: {
-                    increment: nextImpact,
-                  },
-                },
-              }),
-            );
-          }
-
-          return updates;
+          addAccountDelta(
+            accountDeltas,
+            item.currentTransaction.accountId,
+            -oldImpact,
+          );
+          addAccountDelta(accountDeltas, accountId, nextImpact);
         });
+
+        const accountImpactUpdates = Array.from(accountDeltas.entries())
+          .filter(([, delta]) => delta !== 0)
+          .map(([id, delta]) =>
+            tx.account.update({
+              where: {
+                id,
+              },
+              data: {
+                currentBalance: {
+                  increment: delta,
+                },
+              },
+            }),
+          );
 
         const updateOperations = transactionUpdates.map((item) =>
           tx.transaction.update({

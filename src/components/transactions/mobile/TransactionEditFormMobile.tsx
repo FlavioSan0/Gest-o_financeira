@@ -387,6 +387,12 @@ export function TransactionEditFormMobile({
                     : "finance-input opacity-60"
                 }
               />
+
+              {!canEditSeriesQuantity ? (
+                <p className="mobile-form-helper text-amber-300">
+                  Para alterar a quantidade, edite a serie.
+                </p>
+              ) : null}
             </div>
 
             <div className="mobile-series-preview mobile-form-span-2">
