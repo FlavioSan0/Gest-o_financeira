@@ -6,10 +6,10 @@
 @media (max-width: 900px) {
   .mobile-transactions {
     display: grid;
-    gap: 14px;
+    gap: 11px;
     width: 100%;
     min-width: 0;
-    padding-bottom: 16px;
+    padding-bottom: calc(110px + env(safe-area-inset-bottom));
   }
 
   .mobile-transactions-hero {
@@ -408,7 +408,8 @@
 
   .mobile-transactions-responsibles {
     display: grid;
-    gap: 12px;
+    gap: 9px;
+    min-width: 0;
   }
 
   .mobile-transactions-responsibles .mobile-section__header span {
@@ -423,22 +424,26 @@
 
   .mobile-transactions-responsible-scroll {
     display: flex;
-    gap: 10px;
+    gap: 8px;
     overflow-x: auto;
-    padding-bottom: 2px;
+    margin-inline: -2px;
+    padding: 0 18px 4px 2px;
+    scroll-padding-inline: 2px 18px;
+    scroll-snap-type: x proximity;
   }
 
   .mobile-transactions-responsible {
     display: grid;
-    min-width: min(138px, 46vw);
+    min-width: min(126px, 42vw);
     flex-shrink: 0;
-    gap: 8px;
-    border-radius: 24px;
+    scroll-snap-align: start;
+    gap: 6px;
+    border-radius: 20px;
     border: 1px solid rgba(255, 255, 255, 0.08);
     background:
       linear-gradient(180deg, rgba(255, 255, 255, 0.055), rgba(255, 255, 255, 0.02)),
       rgba(8, 13, 27, 0.76);
-    padding: 13px;
+    padding: 10px;
   }
 
   .mobile-transactions-responsible.active {
@@ -450,51 +455,51 @@
 
   .mobile-transactions-responsible div {
     display: flex;
-    height: 34px;
-    width: 34px;
+    height: 30px;
+    width: 30px;
     align-items: center;
     justify-content: center;
-    border-radius: 13px;
+    border-radius: 12px;
     background: #ffffff;
     color: #020617;
   }
 
   .mobile-transactions-responsible strong {
-    font-size: 0.88rem;
+    font-size: 0.8rem;
     font-weight: 950;
     color: #ffffff;
   }
 
   .mobile-transactions-responsible span {
-    font-size: 0.9rem;
+    font-size: 0.78rem;
     font-weight: 950;
     color: rgba(255, 255, 255, 0.68);
   }
 
   .mobile-transactions-list {
     display: grid;
-    gap: 10px;
+    gap: 8px;
   }
 
   .mobile-transaction-row {
     display: grid;
     grid-template-columns: auto minmax(0, 1fr);
-    gap: 12px;
-    border-radius: 22px;
+    gap: 9px;
+    border-radius: 19px;
     border: 1px solid rgba(255, 255, 255, 0.075);
     background:
       linear-gradient(180deg, rgba(255, 255, 255, 0.05), rgba(255, 255, 255, 0.02)),
       rgba(8, 13, 27, 0.76);
-    padding: 12px;
+    padding: 10px;
   }
 
   .mobile-transaction-row__icon {
     display: flex;
-    height: 42px;
-    width: 42px;
+    height: 36px;
+    width: 36px;
     align-items: center;
     justify-content: center;
-    border-radius: 16px;
+    border-radius: 14px;
     background: rgba(255, 255, 255, 0.08);
     color: #ffffff;
   }
@@ -507,13 +512,13 @@
     display: flex;
     align-items: flex-start;
     justify-content: space-between;
-    gap: 8px;
+    gap: 6px;
   }
 
   .mobile-transaction-row__title strong {
     min-width: 0;
     overflow: visible;
-    font-size: 0.92rem;
+    font-size: 0.86rem;
     font-weight: 950;
     letter-spacing: -0.03em;
     color: #ffffff;
@@ -531,13 +536,25 @@
     font-weight: 850;
   }
 
+  .mobile-transaction-row__tag {
+    margin-top: 0.32rem;
+    display: inline-flex;
+    width: fit-content;
+    border-radius: 999px;
+    background: rgba(255, 255, 255, 0.07);
+    padding: 0.22rem 0.48rem;
+    color: rgba(255, 255, 255, 0.58);
+    font-size: 0.64rem;
+    font-weight: 900;
+  }
+
   .mobile-transaction-row__meta {
-    margin-top: 0.4rem;
+    margin-top: 0.3rem;
     display: flex;
     flex-wrap: wrap;
-    gap: 0.35rem 0.6rem;
-    color: rgba(255, 255, 255, 0.42);
-    font-size: 0.7rem;
+    gap: 0.28rem 0.48rem;
+    color: rgba(255, 255, 255, 0.44);
+    font-size: 0.66rem;
     font-weight: 700;
   }
 
@@ -548,8 +565,8 @@
   }
 
   .mobile-transaction-row__notes {
-    margin-top: 0.45rem;
-    font-size: 0.72rem;
+    margin-top: 0.35rem;
+    font-size: 0.68rem;
     line-height: 1.4;
     color: rgba(255, 255, 255, 0.46);
   }
@@ -561,11 +578,11 @@
     align-items: center;
     gap: 8px;
     border-top: 1px solid rgba(255, 255, 255, 0.07);
-    padding-top: 11px;
+    padding-top: 8px;
   }
 
   .mobile-transaction-row__side > strong {
-    font-size: 1.02rem;
+    font-size: 0.92rem;
     font-weight: 950;
     letter-spacing: -0.04em;
   }
@@ -585,20 +602,25 @@
     grid-row: 1 / span 2;
     display: flex;
     align-items: center;
-    gap: 6px;
+    gap: 5px;
   }
 
   .mobile-transaction-row__actions a,
   .mobile-transaction-row__actions button {
     display: inline-flex;
-    height: 38px;
-    width: 38px;
+    height: 32px;
+    width: 32px;
     align-items: center;
     justify-content: center;
-    border-radius: 14px;
+    border-radius: 12px;
     border: 1px solid rgba(255, 255, 255, 0.09);
     background: rgba(255, 255, 255, 0.055);
     color: #ffffff;
+  }
+
+  .mobile-transaction-row__actions svg {
+    height: 0.9rem;
+    width: 0.9rem;
   }
 }
 
@@ -608,7 +630,7 @@
   }
 
   .mobile-transactions-responsible {
-    min-width: min(128px, 48vw);
+    min-width: min(118px, 45vw);
   }
 
   .mobile-transaction-row__title {
