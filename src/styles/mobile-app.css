@@ -12,28 +12,43 @@
   }
 
   html {
+    min-height: 100%;
     background: #020617;
     overflow-x: hidden;
+    overflow-y: auto;
   }
 
   body {
+    min-height: 100%;
     background:
       radial-gradient(circle at top left, rgba(255, 255, 255, 0.055), transparent 34rem),
       radial-gradient(circle at bottom right, rgba(168, 85, 247, 0.08), transparent 28rem),
       #020617;
-    overscroll-behavior-y: none;
+    overscroll-behavior-y: auto;
     overflow-x: hidden;
+    overflow-y: auto;
+    -webkit-overflow-scrolling: touch;
+  }
+
+  .app-shell {
+    min-height: 100dvh;
+    overflow-x: hidden;
+    overflow-y: visible;
   }
 
   .app-main {
+    min-height: 100dvh;
     background: transparent;
     overflow-x: hidden;
+    overflow-y: visible;
   }
 
   .app-page {
     width: 100%;
+    min-height: 100dvh;
     max-width: 100vw;
     overflow-x: hidden;
+    overflow-y: visible;
     padding: 12px 12px calc(132px + env(safe-area-inset-bottom));
   }
 
@@ -44,6 +59,7 @@
     max-width: 100%;
     gap: 14px;
     overflow-x: hidden;
+    overflow-y: visible;
   }
 
   .app-container > .grid {

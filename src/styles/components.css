@@ -474,12 +474,16 @@ select.finance-input::-ms-expand {
 @media (max-width: 900px) {
   .app-shell {
     display: block;
-    min-height: 100vh;
+    min-height: 100dvh;
+    overflow-x: hidden;
+    overflow-y: visible;
   }
 
   .app-layout {
     display: block;
-    min-height: 100vh;
+    min-height: 100dvh;
+    overflow-x: hidden;
+    overflow-y: visible;
   }
 
   .sidebar {
@@ -488,13 +492,17 @@ select.finance-input::-ms-expand {
 
   .app-main {
     min-width: 0;
+    min-height: 100dvh;
+    overflow-x: hidden;
+    overflow-y: visible;
     padding: 0;
     padding-bottom: 96px;
   }
 
   .app-page {
-    min-height: 100vh;
-    overflow: visible;
+    min-height: 100dvh;
+    overflow-x: hidden;
+    overflow-y: visible;
     border: 0;
     border-radius: 0;
     background: transparent;
