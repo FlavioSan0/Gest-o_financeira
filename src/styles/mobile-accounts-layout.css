@@ -6,20 +6,23 @@
 @media (max-width: 900px) {
   .mobile-accounts-page {
     display: grid;
-    gap: 18px;
-    padding-bottom: 10px;
+    gap: 14px;
+    width: 100%;
+    min-width: 0;
+    padding-bottom: 16px;
   }
 
   .mobile-accounts {
     display: grid;
-    gap: 18px;
+    gap: 14px;
+    min-width: 0;
   }
 
   .mobile-accounts-hero {
     position: relative;
     display: grid;
     overflow: hidden;
-    border-radius: 30px;
+    border-radius: 26px;
     border: 1px solid rgba(255, 255, 255, 0.08);
     background:
       radial-gradient(
@@ -33,7 +36,7 @@
         rgba(255, 255, 255, 0.026)
       ),
       rgba(8, 13, 27, 0.84);
-    padding: 18px;
+    padding: 14px;
   }
 
   .mobile-accounts-hero::after {
@@ -77,7 +80,8 @@
   .mobile-accounts-balance {
     display: grid;
     gap: 16px;
-    border-radius: 30px;
+    overflow: hidden;
+    border-radius: 26px;
     background:
       radial-gradient(
         circle at top right,
@@ -90,7 +94,7 @@
         rgba(235, 238, 244, 0.96)
       );
     color: #020617;
-    padding: 18px;
+    padding: 14px;
     box-shadow:
       0 20px 55px rgba(255, 255, 255, 0.08),
       0 24px 60px rgba(0, 0, 0, 0.3);
@@ -98,8 +102,9 @@
 
   .mobile-accounts-balance__top {
     display: flex;
+    flex-wrap: nowrap;
     justify-content: space-between;
-    gap: 16px;
+    gap: 12px;
   }
 
   .mobile-accounts-balance__top span {
@@ -111,7 +116,7 @@
   .mobile-accounts-balance__top strong {
     margin-top: 0.35rem;
     display: block;
-    font-size: clamp(1.9rem, 9vw, 2.55rem);
+    font-size: clamp(1.45rem, 8vw, 2.25rem);
     font-weight: 950;
     line-height: 0.95;
     letter-spacing: -0.075em;
@@ -163,7 +168,8 @@
   .mobile-accounts-stats article {
     display: grid;
     gap: 8px;
-    border-radius: 24px;
+    min-width: 0;
+    border-radius: 22px;
     border: 1px solid rgba(255, 255, 255, 0.08);
     background:
       linear-gradient(
@@ -172,7 +178,7 @@
         rgba(255, 255, 255, 0.02)
       ),
       rgba(8, 13, 27, 0.78);
-    padding: 14px;
+    padding: 12px;
   }
 
   .mobile-accounts-stats article div {
@@ -218,8 +224,8 @@
 
   .mobile-account-card {
     display: grid;
-    gap: 14px;
-    border-radius: 26px;
+    gap: 12px;
+    border-radius: 24px;
     border: 1px solid rgba(255, 255, 255, 0.085);
     background:
       linear-gradient(
@@ -228,7 +234,7 @@
         rgba(255, 255, 255, 0.024)
       ),
       rgba(8, 13, 27, 0.78);
-    padding: 15px;
+    padding: 12px;
   }
 
   .mobile-account-card--inactive {
@@ -237,9 +243,14 @@
 
   .mobile-account-card__top {
     display: grid;
-    grid-template-columns: auto minmax(0, 1fr) auto;
+    grid-template-columns: auto minmax(0, 1fr);
     align-items: center;
     gap: 12px;
+  }
+
+  .mobile-account-card__top > .mobile-account-card__status {
+    grid-column: 1 / -1;
+    width: fit-content;
   }
 
   .mobile-account-card__icon {
@@ -259,24 +270,24 @@
 
   .mobile-account-card__title strong {
     display: block;
-    overflow: hidden;
+    overflow: visible;
     color: #ffffff;
     font-size: 0.96rem;
     font-weight: 950;
     letter-spacing: -0.035em;
-    text-overflow: ellipsis;
-    white-space: nowrap;
+    text-overflow: clip;
+    white-space: normal;
   }
 
   .mobile-account-card__title span {
     margin-top: 0.18rem;
     display: block;
-    overflow: hidden;
+    overflow: visible;
     color: rgba(255, 255, 255, 0.46);
     font-size: 0.72rem;
     font-weight: 750;
-    text-overflow: ellipsis;
-    white-space: nowrap;
+    text-overflow: clip;
+    white-space: normal;
   }
 
   .mobile-account-card__status {
@@ -307,7 +318,7 @@
 
   .mobile-account-card__balance strong {
     color: #ffffff;
-    font-size: 1.55rem;
+    font-size: clamp(1.25rem, 7vw, 1.5rem);
     font-weight: 950;
     line-height: 1;
     letter-spacing: -0.06em;
@@ -315,6 +326,7 @@
 
   .mobile-account-card__meta {
     display: flex;
+    flex-wrap: wrap;
     align-items: center;
     justify-content: space-between;
     gap: 10px;
@@ -330,7 +342,15 @@
   }
 
   .mobile-account-card__action {
-    display: flex;
+    display: grid;
+    gap: 8px;
+  }
+
+  .mobile-account-card__action > div {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 8px;
+    width: 100%;
   }
 
   .mobile-account-card__action button {
@@ -339,9 +359,14 @@
     border-radius: 18px !important;
   }
 
+  .mobile-account-card__action a,
+  .mobile-account-card__action button {
+    min-height: 44px;
+  }
+
   .mobile-accounts-form-section {
     display: grid;
-    gap: 12px;
+    gap: 10px;
   }
 
   .mobile-accounts-form-section > .app-card,
@@ -363,6 +388,10 @@
   .mobile-account-card__status {
     grid-column: 1 / -1;
     width: fit-content;
+  }
+
+  .mobile-account-card__action > div {
+    grid-template-columns: 1fr;
   }
 }
 

@@ -5,32 +5,35 @@
 @media (max-width: 900px) {
   .mobile-recurring-page {
     display: grid;
-    gap: 18px;
-    padding-bottom: 10px;
+    gap: 14px;
+    width: 100%;
+    min-width: 0;
+    padding-bottom: 16px;
   }
 
   .mobile-recurring {
     display: grid;
-    gap: 18px;
+    gap: 14px;
+    min-width: 0;
   }
 
   .mobile-recurring-hero {
     position: relative;
     display: grid;
     overflow: hidden;
-    border-radius: 30px;
+    border-radius: 26px;
     border: 1px solid rgba(255, 255, 255, 0.08);
     background:
       radial-gradient(circle at top right, rgba(255, 255, 255, 0.07), transparent 9rem),
       linear-gradient(180deg, rgba(255, 255, 255, 0.07), rgba(255, 255, 255, 0.026)),
       rgba(8, 13, 27, 0.84);
-    padding: 18px;
+    padding: 14px;
   }
 
   .mobile-recurring-hero h2 {
     margin-top: 0.2rem;
     color: #ffffff;
-    font-size: 2rem;
+    font-size: clamp(1.55rem, 7vw, 1.95rem);
     font-weight: 950;
     line-height: 0.95;
     letter-spacing: -0.07em;
@@ -51,16 +54,18 @@
   .mobile-recurring-summary {
     display: grid;
     gap: 16px;
-    border-radius: 30px;
+    overflow: hidden;
+    border-radius: 26px;
     background:
       radial-gradient(circle at top right, rgba(255, 255, 255, 0.16), transparent 9rem),
       linear-gradient(180deg, rgba(255, 255, 255, 1), rgba(235, 238, 244, 0.96));
     color: #020617;
-    padding: 18px;
+    padding: 14px;
   }
 
   .mobile-recurring-summary__top {
     display: flex;
+    flex-wrap: nowrap;
     justify-content: space-between;
     gap: 16px;
   }
@@ -74,7 +79,7 @@
   .mobile-recurring-summary__top strong {
     margin-top: 0.35rem;
     display: block;
-    font-size: clamp(1.9rem, 8vw, 2.5rem);
+    font-size: clamp(1.45rem, 8vw, 2.25rem);
     font-weight: 950;
     line-height: 0.95;
     letter-spacing: -0.075em;
@@ -137,14 +142,14 @@
 
   .mobile-recurring-card {
     display: grid;
-    gap: 14px;
+    gap: 12px;
     overflow: hidden;
-    border-radius: 26px;
+    border-radius: 24px;
     border: 1px solid rgba(255, 255, 255, 0.085);
     background:
       linear-gradient(180deg, rgba(255, 255, 255, 0.06), rgba(255, 255, 255, 0.024)),
       rgba(8, 13, 27, 0.78);
-    padding: 15px;
+    padding: 12px;
   }
 
   .mobile-recurring-card--inactive {
@@ -175,13 +180,13 @@
 
   .mobile-recurring-card__title strong {
     display: block;
-    overflow: hidden;
+    overflow: visible;
     color: #ffffff;
     font-size: 0.96rem;
     font-weight: 950;
     letter-spacing: -0.035em;
-    text-overflow: ellipsis;
-    white-space: nowrap;
+    text-overflow: clip;
+    white-space: normal;
   }
 
   .mobile-recurring-card__title span {
@@ -202,7 +207,7 @@
     display: block;
     margin-top: 0.25rem;
     color: #ef4444;
-    font-size: 1.45rem;
+    font-size: clamp(1.2rem, 7vw, 1.42rem);
     font-weight: 950;
     letter-spacing: -0.06em;
   }

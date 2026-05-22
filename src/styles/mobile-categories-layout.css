@@ -6,14 +6,15 @@
 @media (max-width: 900px) {
   .mobile-categories-page {
     display: grid !important;
-    gap: 18px !important;
+    gap: 14px !important;
     width: 100%;
-    padding-bottom: 10px;
+    min-width: 0;
+    padding-bottom: 16px;
   }
 
   .mobile-categories {
     display: grid !important;
-    gap: 18px !important;
+    gap: 14px !important;
     width: 100%;
   }
 
@@ -21,7 +22,7 @@
     position: relative;
     display: grid !important;
     overflow: hidden;
-    border-radius: 30px;
+    border-radius: 26px;
     border: 1px solid rgba(255, 255, 255, 0.08);
     background:
       radial-gradient(
@@ -35,7 +36,7 @@
         rgba(255, 255, 255, 0.026)
       ),
       rgba(8, 13, 27, 0.84);
-    padding: 18px;
+    padding: 14px;
     box-shadow:
       0 18px 48px rgba(0, 0, 0, 0.28),
       inset 0 1px 0 rgba(255, 255, 255, 0.045);
@@ -82,7 +83,8 @@
   .mobile-categories-summary {
     display: grid !important;
     gap: 16px;
-    border-radius: 30px;
+    overflow: hidden;
+    border-radius: 26px;
     background:
       radial-gradient(
         circle at top right,
@@ -95,7 +97,7 @@
         rgba(235, 238, 244, 0.96)
       );
     color: #020617;
-    padding: 18px;
+    padding: 14px;
     box-shadow:
       0 20px 55px rgba(255, 255, 255, 0.08),
       0 24px 60px rgba(0, 0, 0, 0.3);
@@ -103,6 +105,7 @@
 
   .mobile-categories-summary__top {
     display: flex;
+    flex-wrap: nowrap;
     justify-content: space-between;
     gap: 16px;
   }
@@ -116,7 +119,7 @@
   .mobile-categories-summary__top strong {
     margin-top: 0.35rem;
     display: block;
-    font-size: clamp(2.1rem, 10vw, 3rem);
+    font-size: clamp(1.7rem, 9vw, 2.5rem);
     font-weight: 950;
     line-height: 0.95;
     letter-spacing: -0.075em;
@@ -169,7 +172,8 @@
   .mobile-categories-stats article {
     display: grid;
     gap: 8px;
-    border-radius: 24px;
+    min-width: 0;
+    border-radius: 22px;
     border: 1px solid rgba(255, 255, 255, 0.08);
     background:
       linear-gradient(
@@ -178,7 +182,7 @@
         rgba(255, 255, 255, 0.02)
       ),
       rgba(8, 13, 27, 0.78);
-    padding: 14px;
+    padding: 12px;
   }
 
   .mobile-categories-stats article div {
@@ -225,10 +229,10 @@
 
   .mobile-category-card {
     display: grid !important;
-    gap: 14px;
+    gap: 12px;
     min-width: 0;
     overflow: hidden;
-    border-radius: 26px;
+    border-radius: 24px;
     border: 1px solid rgba(255, 255, 255, 0.085);
     background:
       linear-gradient(
@@ -237,7 +241,7 @@
         rgba(255, 255, 255, 0.024)
       ),
       rgba(8, 13, 27, 0.78);
-    padding: 15px;
+    padding: 12px;
     box-shadow:
       0 14px 38px rgba(0, 0, 0, 0.22),
       inset 0 1px 0 rgba(255, 255, 255, 0.035);
@@ -272,24 +276,24 @@
 
   .mobile-category-card__title strong {
     display: block;
-    overflow: hidden;
+    overflow: visible;
     color: #ffffff;
     font-size: 0.96rem;
     font-weight: 950;
     letter-spacing: -0.035em;
-    text-overflow: ellipsis;
-    white-space: nowrap;
+    text-overflow: clip;
+    white-space: normal;
   }
 
   .mobile-category-card__title span {
     margin-top: 0.18rem;
     display: block;
-    overflow: hidden;
+    overflow: visible;
     color: rgba(255, 255, 255, 0.46);
     font-size: 0.72rem;
     font-weight: 750;
-    text-overflow: ellipsis;
-    white-space: nowrap;
+    text-overflow: clip;
+    white-space: normal;
   }
 
   .mobile-category-card__type {
@@ -349,11 +353,11 @@
   .mobile-categories-form-section form {
     display: grid !important;
     gap: 14px;
-    padding: 16px;
+    padding: 12px;
   }
 
   .mobile-categories-form-section .grid {
-    gap: 14px !important;
+    gap: 10px !important;
   }
 
   .mobile-categories-form-section .finance-input {
@@ -389,7 +393,7 @@
     align-items: center;
     gap: 12px;
     width: 100%;
-    border-radius: 26px;
+    border-radius: 24px;
     border: 1px solid rgba(255, 255, 255, 0.1);
     background:
       linear-gradient(
@@ -398,7 +402,7 @@
         rgba(255, 255, 255, 0.026)
       ),
       rgba(8, 13, 27, 0.82);
-    padding: 14px;
+    padding: 12px;
     color: #ffffff;
     box-shadow:
       0 16px 44px rgba(0, 0, 0, 0.26),
@@ -421,13 +425,14 @@
     font-size: 0.95rem;
     font-weight: 950;
     letter-spacing: -0.035em;
+    overflow-wrap: anywhere;
   }
 
   .mobile-category-create__panel {
     display: grid;
     gap: 12px;
     overflow: hidden;
-    border-radius: 30px;
+    border-radius: 24px;
     border: 1px solid rgba(255, 255, 255, 0.09);
     background:
       radial-gradient(
@@ -436,7 +441,7 @@
         transparent 10rem
       ),
       rgba(8, 13, 27, 0.84);
-    padding: 14px;
+    padding: 12px;
   }
 
   .mobile-category-create__header {
