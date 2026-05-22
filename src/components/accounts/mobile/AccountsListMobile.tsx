@@ -6,7 +6,7 @@ import {
   Wallet,
   WalletCards,
 } from "lucide-react";
-import { ToggleAccountButton } from "@/components/accounts/ToggleAccountButton";
+import { AccountActionsButton } from "@/components/accounts/AccountActionsButton";
 
 type AccountItem = {
   id: string;
@@ -170,11 +170,7 @@ export function AccountsListMobile({
                   </div>
 
                   <div className="mobile-account-card__action">
-                    <ToggleAccountButton
-                      accountId={account.id}
-                      accountName={account.name}
-                      active={account.active}
-                    />
+                    <AccountActionsButton account={account} />
                   </div>
                 </article>
               );

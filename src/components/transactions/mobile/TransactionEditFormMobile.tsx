@@ -145,8 +145,6 @@ export function TransactionEditFormMobile({
         value={seriesTotalInstallments}
       />
 
-      {isIncome && <input type="hidden" name="status" value="PAID" />}
-
       <header className="mobile-form-header">
         <Link href="/lancamentos" className="mobile-form-back">
           <ArrowLeft className="h-4 w-4" />
@@ -326,9 +324,8 @@ export function TransactionEditFormMobile({
           </div>
         )}
 
-        {isExpense && (
-          <div className="mobile-form-group">
-            <label className="mobile-form-label">Status</label>
+        <div className="mobile-form-group">
+          <label className="mobile-form-label">Status</label>
             <select
               name="status"
               defaultValue={transaction.status}
@@ -339,8 +336,7 @@ export function TransactionEditFormMobile({
               <option value="OVERDUE">Atrasado</option>
               <option value="CANCELED">Cancelado</option>
             </select>
-          </div>
-        )}
+        </div>
       </section>
 
       <section className="mobile-form-card">

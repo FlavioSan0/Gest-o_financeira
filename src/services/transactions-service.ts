@@ -81,12 +81,6 @@ function getDateRange(month: string, year: string) {
   };
 }
 
-function extractRepeatLabel(notes: string | null | undefined) {
-  const match = notes?.match(/PARCELA:([0-9]+\/[0-9]+)/);
-
-  return match ? match[1] : null;
-}
-
 function getRepeatMetadataTokens(notes: string | null | undefined) {
   return (notes ?? "")
     .split(/\r?\n|;/)
@@ -202,6 +196,28 @@ async function getTransactionFormOptionsForFamily(familyId: string) {
       dueDay: card.dueDay,
     })),
   };
+}
+
+function getCleanDescription(description: string) {
+  return description.replace(/\s+\d+\/\d+$/, "").trim();
+}
+
+function getRepeatLabel(notes: string | null | undefined) {
+  const metadata = extractRepeatMetadata(notes);
+
+  if (!metadata) {
+    return null;
+  }
+
+  if (metadata.repetitionType === "PROJECT_12_MONTHS") {
+    return "Fixa";
+  }
+
+  if (metadata.repetitionType === "FIXED_MONTHS") {
+    return "Recorrente";
+  }
+
+  return `${metadata.currentInstallment}/${metadata.totalInstallments}`;
 }
 
 export async function getTransactionFormOptions() {
@@ -428,7 +444,7 @@ async function getTransactionsListForFamily(
   return {
     transactions: transactions.map((transaction) => ({
       id: transaction.id,
-      description: transaction.description,
+      description: getCleanDescription(transaction.description),
       amount: formatCurrency(Number(transaction.amount)),
       rawAmount: Number(transaction.amount),
       type: transaction.type,
@@ -446,7 +462,7 @@ async function getTransactionsListForFamily(
       responsible: transaction.user
         ? getDisplayName(transaction.user.name)
         : "Não informado",
-      repeatLabel: extractRepeatLabel(transaction.notes),
+      repeatLabel: getRepeatLabel(transaction.notes),
       notes: getCleanNotes(transaction.notes),
     })),
     summary: {
@@ -531,7 +547,7 @@ export async function getTransactionForEdit(transactionId: string) {
       creditCardId: transaction.creditCardId ?? "",
       categoryId: transaction.categoryId ?? "",
       type: transaction.type,
-      description: transaction.description,
+      description: getCleanDescription(transaction.description),
       amount: Number(transaction.amount).toFixed(2).replace(".", ","),
       transactionDate: transaction.transactionDate.toISOString().slice(0, 10),
       dueDate: transaction.dueDate

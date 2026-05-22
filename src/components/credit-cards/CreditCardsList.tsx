@@ -5,7 +5,7 @@ import {
   Layers3,
   WalletCards,
 } from "lucide-react";
-import { ToggleCreditCardButton } from "./ToggleCreditCardButton";
+import { CreditCardActionsButton } from "./CreditCardActionsButton";
 
 type CreditCardItem = {
   id: string;
@@ -179,11 +179,7 @@ export function CreditCardsList({
                     </div>
                   </div>
 
-                  <ToggleCreditCardButton
-                    creditCardId={card.id}
-                    creditCardName={card.name}
-                    active={card.active}
-                  />
+                  <CreditCardActionsButton card={card} />
                 </div>
               </article>
             ))}

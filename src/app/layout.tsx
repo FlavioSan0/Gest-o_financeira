@@ -1,10 +1,9 @@
-import type { Metadata } from "next";
+import type { Metadata, Viewport } from "next";
 import "./globals.css";
 
 export const metadata: Metadata = {
   title: "Quebrei",
   description: "Controle financeiro familiar",
-  themeColor: "#020617",
   manifest: "/manifest.webmanifest",
   icons: {
     icon: [
@@ -18,6 +17,10 @@ export const metadata: Metadata = {
     title: "Quebrei",
     statusBarStyle: "black-translucent",
   },
+};
+
+export const viewport: Viewport = {
+  themeColor: "#020617",
 };
 
 export default function RootLayout({

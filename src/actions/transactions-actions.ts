@@ -420,15 +420,10 @@ function buildSeriesDescription(
   currentInstallmentLabel: string,
   targetInstallmentLabel: string,
 ) {
-  if (description.endsWith(` ${currentInstallmentLabel}`)) {
-    return `${description.slice(0, -currentInstallmentLabel.length).trim()} ${targetInstallmentLabel}`;
-  }
+  void currentInstallmentLabel;
+  void targetInstallmentLabel;
 
-  if (/\s+\d+\/\d+$/.test(description)) {
-    return description.replace(/\s+\d+\/\d+$/, ` ${targetInstallmentLabel}`);
-  }
-
-  return description;
+  return description.replace(/\s+\d+\/\d+$/, "").trim();
 }
 
 function buildTransactions(input: {
@@ -449,7 +444,7 @@ function buildTransactions(input: {
   repeatQuantity: number;
   amountMode: AmountMode;
 }): TransactionCreateInput[] {
-  if (input.type === "INCOME" || input.repeatMode === "NONE") {
+  if (input.repeatMode === "NONE") {
     return [
       {
         familyId: input.familyId,
@@ -483,6 +478,7 @@ function buildTransactions(input: {
 
   return Array.from({ length: safeQuantity }, (_, index) => {
     const installmentNumber = index + 1;
+    const occurrenceTransactionDate = addMonths(input.transactionDate, index);
     const occurrenceDueDate = input.dueDate
       ? addMonths(input.dueDate, index)
       : null;
@@ -504,9 +500,9 @@ function buildTransactions(input: {
       creditCardId: input.creditCardId,
       categoryId: input.categoryId,
       type: input.type,
-      description: `${input.description} ${installmentNumber}/${safeQuantity}`,
+      description: input.description,
       amount: amountPerOccurrence,
-      transactionDate: input.transactionDate,
+      transactionDate: occurrenceTransactionDate,
       dueDate: occurrenceDueDate,
       status: occurrenceStatus,
       paymentMethod: input.paymentMethod,

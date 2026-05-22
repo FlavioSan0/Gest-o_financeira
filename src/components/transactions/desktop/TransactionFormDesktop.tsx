@@ -74,7 +74,7 @@ export function TransactionFormDesktop({
   const isIncome = transactionType === "INCOME";
   const isExpense = transactionType === "EXPENSE";
   const isCreditCardPayment = isExpense && paymentMethod === "CREDIT_CARD";
-  const showRepeatOptions = isExpense;
+  const showRepeatOptions = true;
   const showQuantityField =
     repeatMode === "INSTALLMENT" || repeatMode === "FIXED_MONTHS";
 
@@ -133,9 +133,6 @@ export function TransactionFormDesktop({
 
     if (type === "INCOME") {
       setPaymentMethod("PIX");
-      setRepeatMode("NONE");
-      setAmountMode("PER_INSTALLMENT");
-      setRepeatQuantity(2);
       setHasDueDate(false);
     }
   }
@@ -171,8 +168,6 @@ export function TransactionFormDesktop({
     <form action={createTransactionAction} className="grid gap-6">
       <input type="hidden" name="familyId" value={familyId} />
       <input type="hidden" name="type" value={transactionType} />
-
-      {isIncome && <input type="hidden" name="status" value="PAID" />}
 
       <div className="flex flex-col justify-between gap-4 md:flex-row md:items-center">
         <div>
@@ -328,11 +323,10 @@ export function TransactionFormDesktop({
               </div>
             )}
 
-            {isExpense && (
-              <div>
-                <label className="mb-2 block text-sm font-bold text-white">
-                  Status do primeiro lançamento
-                </label>
+            <div>
+              <label className="mb-2 block text-sm font-bold text-white">
+                Status do primeiro lançamento
+              </label>
 
                 <select
                   name="status"
@@ -353,8 +347,7 @@ export function TransactionFormDesktop({
                     como pendentes para não alterar seu saldo futuro.
                   </p>
                 )}
-              </div>
-            )}
+            </div>
 
             {!isCreditCardPayment && (
               <div>
@@ -446,12 +439,12 @@ export function TransactionFormDesktop({
 
                 <div>
                   <h3 className="text-lg font-black tracking-[-0.03em] text-white">
-                    Repetição da despesa
+                    Repetição do lançamento
                   </h3>
 
                   <p className="mt-1 text-sm app-faint-text">
-                    Use para compras parceladas, aluguel por alguns meses,
-                    assinatura ou conta fixa.
+                    Use para compras parceladas, salário mensal, assinatura ou
+                    conta fixa.
                   </p>
                 </div>
               </div>
@@ -476,7 +469,7 @@ export function TransactionFormDesktop({
                       Repetir por alguns meses
                     </option>
                     <option value="PROJECT_12_MONTHS">
-                      Recorrente sem prazo definido — projetar 12 meses
+                      Fixa sem prazo definido
                     </option>
                   </select>
                 </div>
@@ -554,7 +547,7 @@ export function TransactionFormDesktop({
                               : 0;
 
                           if (repeatMode === "PROJECT_12_MONTHS") {
-                            return "Será criada uma projeção de 12 meses";
+                            return "Lançamento fixo sem prazo definido";
                           }
 
                           if (amountMode === "TOTAL") {
@@ -603,7 +596,7 @@ export function TransactionFormDesktop({
                         "Exemplo: aluguel por 12 meses. Se escolher valor de cada mês, o mesmo valor será lançado mensalmente."}
 
                       {repeatMode === "PROJECT_12_MONTHS" &&
-                        "Exemplo: internet ou assinatura sem prazo final. O sistema criará uma projeção dos próximos 12 meses."}
+                        "Exemplo: internet, assinatura ou salário sem prazo final. O sistema manterá a visualização como fixa."}
                     </div>
                   </>
                 )}

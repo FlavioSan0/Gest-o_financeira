@@ -151,8 +151,6 @@ export function TransactionEditFormDesktop({
         value={seriesTotalInstallments}
       />
 
-      {isIncome && <input type="hidden" name="status" value="PAID" />}
-
       <div className="flex flex-col justify-between gap-4 md:flex-row md:items-center">
         <div>
           <Link
@@ -364,11 +362,10 @@ export function TransactionEditFormDesktop({
               </div>
             )}
 
-            {isExpense && (
-              <div>
-                <label className="mb-2 block text-sm font-bold text-white">
-                  Status
-                </label>
+            <div>
+              <label className="mb-2 block text-sm font-bold text-white">
+                Status
+              </label>
                 <select
                   name="status"
                   defaultValue={transaction.status}
@@ -379,8 +376,7 @@ export function TransactionEditFormDesktop({
                   <option value="OVERDUE">Atrasado</option>
                   <option value="CANCELED">Cancelado</option>
                 </select>
-              </div>
-            )}
+            </div>
 
             {!isCreditCardPayment && (
               <div>

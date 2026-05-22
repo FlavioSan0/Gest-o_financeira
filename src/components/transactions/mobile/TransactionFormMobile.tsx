@@ -158,8 +158,6 @@ export function TransactionFormMobile({
       <input type="hidden" name="familyId" value={familyId} />
       <input type="hidden" name="type" value={transactionType} />
 
-      {isIncome && <input type="hidden" name="status" value="PAID" />}
-
       <header className="mobile-form-header">
         <Link href="/" className="mobile-form-back">
           <ArrowLeft className="h-4 w-4" />
@@ -298,9 +296,8 @@ export function TransactionFormMobile({
           </div>
         )}
 
-        {isExpense && (
-          <div className="mobile-form-group">
-            <label className="mobile-form-label">Status</label>
+        <div className="mobile-form-group">
+          <label className="mobile-form-label">Status</label>
 
             <select
               name="status"
@@ -314,21 +311,19 @@ export function TransactionFormMobile({
               <option value="PENDING">Pendente</option>
               <option value="OVERDUE">Atrasado</option>
             </select>
-          </div>
-        )}
+        </div>
       </section>
 
-      {isExpense && (
-        <section className="mobile-form-card mobile-form-repeat-card">
+      <section className="mobile-form-card mobile-form-repeat-card">
           <div className="flex items-start gap-3">
             <div className="app-icon-box h-10 w-10">
               <Repeat className="h-5 w-5" />
             </div>
 
             <div>
-              <label className="mobile-form-label">Repetição da despesa</label>
+              <label className="mobile-form-label">Repetição do lançamento</label>
               <p className="mobile-form-helper">
-                Use para compras parceladas, aluguel, assinatura ou conta fixa.
+                Use para compras parceladas, salário mensal, assinatura ou conta fixa.
               </p>
             </div>
           </div>
@@ -355,7 +350,7 @@ export function TransactionFormMobile({
                 <option value="INSTALLMENT">Parcelar compra</option>
                 <option value="FIXED_MONTHS">Repetir por alguns meses</option>
                 <option value="PROJECT_12_MONTHS">
-                  Recorrente sem prazo definido — projetar 12 meses
+                  Fixa sem prazo definido
                 </option>
               </select>
             </div>
@@ -432,7 +427,7 @@ export function TransactionFormMobile({
                           : 0;
 
                       if (repeatMode === "PROJECT_12_MONTHS") {
-                        return "Será criada uma projeção de 12 meses";
+                        return "Lançamento fixo sem prazo definido";
                       }
 
                       if (amountMode === "TOTAL") {
@@ -475,8 +470,7 @@ export function TransactionFormMobile({
               </>
             )}
           </div>
-        </section>
-      )}
+      </section>
 
       <section className="mobile-form-card">
         {!isCreditCardPayment && (

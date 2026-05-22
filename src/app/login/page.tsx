@@ -1,4 +1,5 @@
 import { Wallet } from "lucide-react";
+import Link from "next/link";
 import { loginAction } from "@/actions/auth-actions";
 
 type LoginPageProps = {
@@ -20,6 +21,10 @@ function getErrorMessage(error?: string) {
 function getSuccessMessage(message?: string) {
   if (message === "password-updated") {
     return "Senha alterada com sucesso. Entre novamente.";
+  }
+
+  if (message === "registered") {
+    return "Conta criada com sucesso. Entre com seu e-mail e senha.";
   }
 
   return null;
@@ -101,6 +106,13 @@ export default async function LoginPage({ searchParams }: LoginPageProps) {
               Entrar
             </button>
           </form>
+
+          <Link
+            href="/cadastro"
+            className="mt-5 block text-center text-sm font-bold text-white/45 transition hover:text-white"
+          >
+            Criar conta
+          </Link>
 
           <div className="mt-6 rounded-3xl border border-white/10 bg-black/25 p-4">
             <p className="text-xs font-bold text-white/45">

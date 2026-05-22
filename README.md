@@ -2,6 +2,17 @@ This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-
 
 ## Getting Started
 
+## Environment
+
+Configure the database connection strings and the invite code used by the
+controlled registration screen:
+
+```bash
+DATABASE_URL="postgresql://USER:PASSWORD@HOST/DATABASE?sslmode=verify-full&channel_binding=require"
+DIRECT_URL="postgresql://USER:PASSWORD@HOST/DATABASE?sslmode=verify-full&channel_binding=require"
+REGISTRATION_INVITE_CODE="your-private-code"
+```
+
 First, run the development server:
 
 ```bash

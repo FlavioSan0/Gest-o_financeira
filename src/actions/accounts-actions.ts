@@ -57,6 +57,27 @@ function revalidateAccountsDependencies(familyId: string) {
   revalidatePath("/cartoes/faturas");
 }
 
+function getAccountType(value: string) {
+  if (
+    value === "CHECKING" ||
+    value === "SAVINGS" ||
+    value === "CASH" ||
+    value === "WALLET" ||
+    value === "INVESTMENT" ||
+    value === "OTHER"
+  ) {
+    return value;
+  }
+
+  throw new Error("Tipo de conta invalido.");
+}
+
+function getBooleanValue(formData: FormData, field: string) {
+  const value = getOptionalValue(formData, field);
+
+  return value === "true" || value === "on";
+}
+
 export async function createAccountAction(formData: FormData) {
   const session = await requireSession();
   const familyId = session.familyId;
@@ -107,6 +128,102 @@ export async function createAccountAction(formData: FormData) {
   }
 
   revalidateAccountsDependencies(familyId);
+}
+
+export async function updateAccountAction(formData: FormData) {
+  const session = await requireSession();
+  const familyId = session.familyId;
+  const accountId = getRequiredValue(formData, "accountId");
+  const name = getRequiredValue(formData, "name");
+  const type = getAccountType(getRequiredValue(formData, "type"));
+  const initialBalance = parseCurrencyValue(
+    getOptionalValue(formData, "initialBalance"),
+  );
+  const active = getBooleanValue(formData, "active");
+
+  const account = await prisma.account.findFirst({
+    where: {
+      id: accountId,
+      familyId,
+    },
+    select: {
+      id: true,
+      initialBalance: true,
+      currentBalance: true,
+    },
+  });
+
+  if (!account) {
+    throw new Error("Conta nao encontrada.");
+  }
+
+  const initialBalanceDelta = initialBalance - Number(account.initialBalance);
+
+  await prisma.account.update({
+    where: {
+      id: account.id,
+    },
+    data: {
+      name,
+      type,
+      initialBalance,
+      currentBalance: {
+        increment: initialBalanceDelta,
+      },
+      active,
+    },
+  });
+
+  revalidateAccountsDependencies(familyId);
+
+  return {
+    success: true,
+  };
+}
+
+export async function deleteAccountAction(formData: FormData) {
+  const session = await requireSession();
+  const familyId = session.familyId;
+  const accountId = getRequiredValue(formData, "accountId");
+
+  const account = await prisma.account.findFirst({
+    where: {
+      id: accountId,
+      familyId,
+    },
+    select: {
+      id: true,
+      _count: {
+        select: {
+          transactions: true,
+        },
+      },
+    },
+  });
+
+  if (!account) {
+    throw new Error("Conta nao encontrada.");
+  }
+
+  if (account._count.transactions > 0) {
+    return {
+      success: false,
+      message:
+        "Esta conta possui lancamentos e nao pode ser excluida. Voce pode inativa-la.",
+    };
+  }
+
+  await prisma.account.delete({
+    where: {
+      id: account.id,
+    },
+  });
+
+  revalidateAccountsDependencies(familyId);
+
+  return {
+    success: true,
+  };
 }
 
 export async function toggleAccountStatusAction(accountId: string) {

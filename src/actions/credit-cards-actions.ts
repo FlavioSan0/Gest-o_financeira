@@ -66,6 +66,12 @@ function revalidateCreditCardDependencies(familyId: string) {
   revalidatePath("/lancamentos/novo");
 }
 
+function getBooleanValue(formData: FormData, field: string) {
+  const value = getOptionalValue(formData, field);
+
+  return value === "true" || value === "on";
+}
+
 export async function createCreditCardAction(formData: FormData) {
   const session = await requireSession();
   const familyId = session.familyId;
@@ -120,6 +126,109 @@ export async function createCreditCardAction(formData: FormData) {
   }
 
   revalidateCreditCardDependencies(familyId);
+}
+
+export async function updateCreditCardAction(formData: FormData) {
+  const session = await requireSession();
+  const familyId = session.familyId;
+  const creditCardId = getRequiredValue(formData, "creditCardId");
+  const name = getRequiredValue(formData, "name");
+  const bank = getOptionalValue(formData, "bank");
+  const limitAmount = parseCurrencyValue(
+    getOptionalValue(formData, "limitAmount"),
+  );
+  const closingDay = parseDayValue(
+    getRequiredValue(formData, "closingDay"),
+    "Dia de fechamento",
+  );
+  const dueDay = parseDayValue(
+    getRequiredValue(formData, "dueDay"),
+    "Dia de vencimento",
+  );
+  const active = getBooleanValue(formData, "active");
+
+  const creditCard = await prisma.creditCard.findFirst({
+    where: {
+      id: creditCardId,
+      familyId,
+    },
+    select: {
+      id: true,
+    },
+  });
+
+  if (!creditCard) {
+    throw new Error("Cartao nao encontrado.");
+  }
+
+  await prisma.creditCard.update({
+    where: {
+      id: creditCard.id,
+    },
+    data: {
+      name,
+      bank,
+      limitAmount,
+      closingDay,
+      dueDay,
+      active,
+    },
+  });
+
+  revalidateCreditCardDependencies(familyId);
+
+  return {
+    success: true,
+  };
+}
+
+export async function deleteCreditCardAction(formData: FormData) {
+  const session = await requireSession();
+  const familyId = session.familyId;
+  const creditCardId = getRequiredValue(formData, "creditCardId");
+
+  const creditCard = await prisma.creditCard.findFirst({
+    where: {
+      id: creditCardId,
+      familyId,
+    },
+    select: {
+      id: true,
+      _count: {
+        select: {
+          invoices: true,
+          transactions: true,
+        },
+      },
+    },
+  });
+
+  if (!creditCard) {
+    throw new Error("Cartao nao encontrado.");
+  }
+
+  if (
+    creditCard._count.transactions > 0 ||
+    creditCard._count.invoices > 0
+  ) {
+    return {
+      success: false,
+      message:
+        "Este cartao possui lancamentos ou faturas e nao pode ser excluido. Voce pode inativa-lo.",
+    };
+  }
+
+  await prisma.creditCard.delete({
+    where: {
+      id: creditCard.id,
+    },
+  });
+
+  revalidateCreditCardDependencies(familyId);
+
+  return {
+    success: true,
+  };
 }
 
 export async function toggleCreditCardStatusAction(formData: FormData) {
