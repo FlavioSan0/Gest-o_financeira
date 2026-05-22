@@ -57,6 +57,7 @@ type TransactionEditData = {
   status: "PAID" | "PENDING" | "OVERDUE" | "CANCELED";
   paymentMethod: PaymentMethod;
   notes: string;
+  responsible?: string;
   series: {
     repetitionId: string;
     repetitionType?: string;
@@ -77,7 +78,7 @@ type TransactionEditFormMobileProps = {
 };
 
 function getAmountModeLabel(amountMode?: string) {
-  return amountMode === "TOTAL" ? "valor total dividido" : "valor por parcela";
+  return amountMode === "TOTAL" ? "total" : "por parcela";
 }
 
 export function TransactionEditFormMobile({
@@ -127,8 +128,8 @@ export function TransactionEditFormMobile({
     : [
         { value: "PIX", label: "Pix" },
         { value: "CASH", label: "Dinheiro" },
-        { value: "DEBIT_CARD", label: "Cartao de debito" },
-        { value: "CREDIT_CARD", label: "Cartao de credito" },
+        { value: "DEBIT_CARD", label: "Debito" },
+        { value: "CREDIT_CARD", label: "Credito" },
         { value: "BANK_TRANSFER", label: "Transferencia" },
         { value: "BOLETO", label: "Boleto" },
         { value: "OTHER", label: "Outro" },
@@ -151,20 +152,14 @@ export function TransactionEditFormMobile({
           Lancamentos
         </Link>
 
-        <h2>Editar lancamento</h2>
+        <h2>Editar</h2>
         <p>
-          {isIncome
-            ? "Ajuste uma entrada recebida."
-            : "Ajuste uma saida, compra, conta ou pagamento."}
+          {transaction.series
+            ? editScope === "THIS_AND_NEXT"
+              ? "Este e os proximos."
+              : "Somente este lancamento."
+            : "Lancamento simples."}
         </p>
-
-        {transaction.series ? (
-          <span className="mt-2 block text-xs font-bold text-cyan-200">
-            {editScope === "THIS_AND_NEXT"
-              ? "Este e os proximos"
-              : "Somente este lancamento"}
-          </span>
-        ) : null}
       </header>
 
       {errorMessage ? (
@@ -174,12 +169,46 @@ export function TransactionEditFormMobile({
       ) : null}
 
       <section className="mobile-form-card">
-        <label className="mobile-form-label">Tipo de lancamento</label>
-        <div
-          className="mobile-type-switch"
-          role="group"
-          aria-label="Tipo de lancamento"
-        >
+        <div className="mobile-form-compact-grid">
+          <div className="mobile-form-group mobile-form-span-2">
+            <label className="mobile-form-label">Descricao</label>
+            <input
+              required
+              name="description"
+              defaultValue={transaction.description}
+              placeholder={isIncome ? "Salario" : "Mercado"}
+              className="finance-input"
+            />
+          </div>
+
+          <div className="mobile-form-group">
+            <label className="mobile-form-label">Valor</label>
+            <input
+              required
+              name="amount"
+              defaultValue={transaction.amount}
+              placeholder="R$ 0,00"
+              inputMode="decimal"
+              className="finance-input mobile-form-value-input"
+            />
+          </div>
+
+          <div className="mobile-form-group">
+            <label className="mobile-form-label">Status</label>
+            <select
+              name="status"
+              defaultValue={transaction.status}
+              className="finance-input"
+            >
+              <option value="PAID">Pago</option>
+              <option value="PENDING">Pendente</option>
+              <option value="OVERDUE">Atrasado</option>
+              <option value="CANCELED">Cancelado</option>
+            </select>
+          </div>
+        </div>
+
+        <div className="mobile-type-switch" role="group" aria-label="Tipo">
           <Link
             href={`/lancamentos/${transaction.id}/editar?scope=${editScope}&type=EXPENSE`}
             prefetch={false}
@@ -210,25 +239,140 @@ export function TransactionEditFormMobile({
         </div>
       </section>
 
-      {transaction.series ? (
-        <section className="mobile-form-card mobile-form-repeat-card">
-          <div className="flex items-start gap-3">
-            <div className="app-icon-box h-10 w-10">
-              <Repeat className="h-5 w-5" />
-            </div>
-            <div>
-              <label className="mobile-form-label">Repeticao da serie</label>
-              <p className="mobile-form-helper">
-                Parcela {transaction.series.currentInstallment}/
-                {transaction.series.totalInstallments} ·{" "}
-                {getAmountModeLabel(transaction.series.amountMode)}
-              </p>
-            </div>
+      <section className="mobile-form-card">
+        <div className="mobile-form-compact-grid">
+          <div className="mobile-form-group">
+            <label className="mobile-form-label">
+              {isIncome ? "Recebido em" : "Data"}
+            </label>
+            <input
+              required
+              type="date"
+              name="transactionDate"
+              defaultValue={transaction.transactionDate}
+              className="finance-input"
+            />
           </div>
 
-          <div className="mt-4 space-y-4">
-            <div>
-              <label className="mobile-form-label">Quantidade total</label>
+          {isExpense && (
+            <div className="mobile-form-group">
+              <label className="mobile-form-label">Vencimento</label>
+              <input
+                type="date"
+                name="dueDate"
+                defaultValue={transaction.dueDate}
+                className="finance-input"
+              />
+            </div>
+          )}
+
+          <div className="mobile-form-group mobile-form-span-2">
+            <label className="mobile-form-label">
+              {isIncome ? "Recebimento" : "Pagamento"}
+            </label>
+            <select
+              name="paymentMethod"
+              value={paymentMethod}
+              onChange={(event) =>
+                setPaymentMethod(event.target.value as PaymentMethod)
+              }
+              className="finance-input"
+            >
+              {paymentOptions.map((option) => (
+                <option key={option.value} value={option.value}>
+                  {option.label}
+                </option>
+              ))}
+            </select>
+          </div>
+        </div>
+      </section>
+
+      <section className="mobile-form-card">
+        <div className="mobile-form-compact-grid">
+          <div className="mobile-form-group">
+            <label className="mobile-form-label">Categoria</label>
+            <select
+              name="categoryId"
+              defaultValue={
+                currentCategoryIsCompatible ? transaction.categoryId : ""
+              }
+              className="finance-input"
+            >
+              <option value="">Sem categoria</option>
+              {filteredCategories.map((category) => (
+                <option key={category.id} value={category.id}>
+                  {category.name}
+                </option>
+              ))}
+            </select>
+          </div>
+
+          {!isCreditCardPayment ? (
+            <div className="mobile-form-group">
+              <label className="mobile-form-label">
+                {isIncome ? "Destino" : "Conta"}
+              </label>
+              <select
+                name="accountId"
+                defaultValue={transaction.accountId}
+                className="finance-input"
+              >
+                <option value="">{isIncome ? "Selecionar" : "Sem conta"}</option>
+                {accounts.map((account) => (
+                  <option key={account.id} value={account.id}>
+                    {account.name}
+                  </option>
+                ))}
+              </select>
+            </div>
+          ) : (
+            <div className="mobile-form-group">
+              <label className="mobile-form-label">Cartao</label>
+              <select
+                required
+                name="creditCardId"
+                defaultValue={transaction.creditCardId}
+                className="finance-input"
+              >
+                <option value="">Selecione</option>
+                {creditCards.map((card) => (
+                  <option key={card.id} value={card.id}>
+                    {card.name} - {card.bank}
+                  </option>
+                ))}
+              </select>
+            </div>
+          )}
+
+          <div className="mobile-form-readonly mobile-form-span-2">
+            <span>Responsavel</span>
+            <strong>{transaction.responsible ?? "Nao informado"}</strong>
+          </div>
+        </div>
+      </section>
+
+      {transaction.series ? (
+        <section className="mobile-form-card mobile-form-repeat-card">
+          <div className="mobile-repeat-title">
+            <Repeat className="h-4 w-4" />
+            <span>Serie</span>
+          </div>
+
+          <div className="mobile-form-compact-grid">
+            <div className="mobile-form-group">
+              <label className="mobile-form-label">Parcela</label>
+              <div className="mobile-series-preview">
+                <span>
+                  {transaction.series.currentInstallment}/
+                  {transaction.series.totalInstallments}
+                </span>
+                <strong>{getAmountModeLabel(transaction.series.amountMode)}</strong>
+              </div>
+            </div>
+
+            <div className="mobile-form-group">
+              <label className="mobile-form-label">Qtd. total</label>
               <input
                 type="number"
                 min={transaction.series.currentInstallment}
@@ -243,188 +387,27 @@ export function TransactionEditFormMobile({
                     : "finance-input opacity-60"
                 }
               />
-
-              {!canEditSeriesQuantity ? (
-                <p className="mobile-form-helper text-amber-300">
-                  Para alterar a quantidade, edite este e os proximos.
-                </p>
-              ) : null}
             </div>
 
-            <div className="rounded-3xl border border-white/10 bg-white/5 p-4 text-sm text-white/80">
-              <p>
-                A serie passara de {transaction.series.totalInstallments} para{" "}
-                {seriesTotalPreview} parcelas.
-              </p>
-
-              {seriesTotalPreview &&
-              seriesTotalPreview > transaction.series.totalInstallments ? (
-                <p className="mt-2 font-bold text-emerald-300">
-                  Novas parcelas serao criadas como pendentes.
-                </p>
-              ) : null}
-
-              {seriesTotalPreview &&
-              seriesTotalPreview < transaction.series.totalInstallments ? (
-                <p className="mt-2 font-bold text-amber-300">
-                  Parcelas futuras excedentes serao canceladas se pendentes.
-                </p>
-              ) : null}
+            <div className="mobile-series-preview mobile-form-span-2">
+              <span>
+                {canEditSeriesQuantity
+                  ? "Este e os proximos"
+                  : "Somente este"}
+              </span>
+              <strong>Total: {seriesTotalPreview}</strong>
             </div>
           </div>
         </section>
       ) : null}
 
       <section className="mobile-form-card">
-        <div className="mobile-form-group">
-          <label className="mobile-form-label">Descricao</label>
-          <input
-            required
-            name="description"
-            defaultValue={transaction.description}
-            placeholder={isIncome ? "Ex: Salario" : "Ex: Mercado"}
-            className="finance-input"
-          />
-        </div>
-
-        <div className="mobile-form-group">
-          <label className="mobile-form-label">Valor</label>
-          <input
-            required
-            name="amount"
-            defaultValue={transaction.amount}
-            placeholder="R$ 0,00"
-            inputMode="decimal"
-            className="finance-input mobile-form-value-input"
-          />
-        </div>
-
-        <div className="mobile-form-group">
-          <label className="mobile-form-label">
-            {isIncome ? "Data de recebimento" : "Data do lancamento"}
-          </label>
-          <input
-            required
-            type="date"
-            name="transactionDate"
-            defaultValue={transaction.transactionDate}
-            className="finance-input"
-          />
-        </div>
-
-        {isExpense && (
-          <div className="mobile-form-group">
-            <label className="mobile-form-label">Data de vencimento</label>
-            <input
-              type="date"
-              name="dueDate"
-              defaultValue={transaction.dueDate}
-              className="finance-input"
-            />
-          </div>
-        )}
-
-        <div className="mobile-form-group">
-          <label className="mobile-form-label">Status</label>
-            <select
-              name="status"
-              defaultValue={transaction.status}
-              className="finance-input"
-            >
-              <option value="PAID">Pago</option>
-              <option value="PENDING">Pendente</option>
-              <option value="OVERDUE">Atrasado</option>
-              <option value="CANCELED">Cancelado</option>
-            </select>
-        </div>
-      </section>
-
-      <section className="mobile-form-card">
-        {!isCreditCardPayment && (
-          <div className="mobile-form-group">
-            <label className="mobile-form-label">
-              {isIncome ? "Conta de destino" : "Conta"}
-            </label>
-            <select
-              name="accountId"
-              defaultValue={transaction.accountId}
-              className="finance-input"
-            >
-              <option value="">{isIncome ? "Selecionar conta" : "Sem conta"}</option>
-              {accounts.map((account) => (
-                <option key={account.id} value={account.id}>
-                  {account.name}
-                </option>
-              ))}
-            </select>
-          </div>
-        )}
-
-        {isCreditCardPayment && (
-          <div className="mobile-form-group">
-            <label className="mobile-form-label">Cartao de credito</label>
-            <select
-              required
-              name="creditCardId"
-              defaultValue={transaction.creditCardId}
-              className="finance-input"
-            >
-              <option value="">Selecione um cartao</option>
-              {creditCards.map((card) => (
-                <option key={card.id} value={card.id}>
-                  {card.name} · {card.bank}
-                </option>
-              ))}
-            </select>
-          </div>
-        )}
-
-        <div className="mobile-form-group">
-          <label className="mobile-form-label">Categoria</label>
-          <select
-            name="categoryId"
-            defaultValue={
-              currentCategoryIsCompatible ? transaction.categoryId : ""
-            }
-            className="finance-input"
-          >
-            <option value="">Sem categoria</option>
-            {filteredCategories.map((category) => (
-              <option key={category.id} value={category.id}>
-                {category.name}
-              </option>
-            ))}
-          </select>
-        </div>
-
-        <div className="mobile-form-group">
-          <label className="mobile-form-label">
-            {isIncome ? "Recebimento" : "Pagamento"}
-          </label>
-          <select
-            name="paymentMethod"
-            value={paymentMethod}
-            onChange={(event) =>
-              setPaymentMethod(event.target.value as PaymentMethod)
-            }
-            className="finance-input"
-          >
-            {paymentOptions.map((option) => (
-              <option key={option.value} value={option.value}>
-                {option.label}
-              </option>
-            ))}
-          </select>
-        </div>
-      </section>
-
-      <section className="mobile-form-card">
         <label className="mobile-form-label">Observacoes</label>
         <textarea
           name="notes"
-          rows={4}
+          rows={3}
           defaultValue={transaction.notes}
-          placeholder="Informacoes adicionais..."
+          placeholder="Opcional"
           className="finance-input resize-none"
         />
       </section>

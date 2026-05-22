@@ -48,6 +48,7 @@ type TransactionEditData = {
   status: "PAID" | "PENDING" | "OVERDUE" | "CANCELED";
   paymentMethod: PaymentMethod;
   notes: string;
+  responsible?: string;
   series: {
     repetitionId: string;
     repetitionType?: string;

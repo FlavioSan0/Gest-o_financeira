@@ -13,6 +13,7 @@ type TransactionsPageProps = {
     status?: string;
     paymentMethod?: string;
     responsibleId?: string;
+    categoryId?: string;
     month?: string;
     year?: string;
   }>;
@@ -85,6 +86,14 @@ function normalizeResponsibleId(value?: string) {
   return value;
 }
 
+function normalizeCategoryId(value?: string) {
+  if (!value || value.trim() === "") {
+    return "ALL";
+  }
+
+  return value;
+}
+
 export default async function TransactionsPage({
   searchParams,
 }: TransactionsPageProps) {
@@ -96,6 +105,7 @@ export default async function TransactionsPage({
     status: normalizeStatus(params.status),
     paymentMethod: normalizePaymentMethod(params.paymentMethod),
     responsibleId: normalizeResponsibleId(params.responsibleId),
+    categoryId: normalizeCategoryId(params.categoryId),
     month: normalizeMonth(params.month),
     year: normalizeYear(params.year),
   };
@@ -113,6 +123,7 @@ export default async function TransactionsPage({
           responsibleSummaryCards={data.responsibleSummaryCards}
           filters={data.filters}
           responsibleOptions={data.responsibleOptions}
+          categoryOptions={data.categoryOptions}
         />
       </div>
     </AppShell>

@@ -29,6 +29,12 @@ type ResponsibleOption = {
   name: string;
 };
 
+type CategoryOption = {
+  id: string;
+  name: string;
+  type: "INCOME" | "EXPENSE";
+};
+
 type ResponsibleSummaryCard = {
   id: string;
   name: string;
@@ -54,10 +60,12 @@ type TransactionsListProps = {
     status: string;
     paymentMethod: string;
     responsibleId: string;
+    categoryId: string;
     month: string;
     year: string;
   };
   responsibleOptions: ResponsibleOption[];
+  categoryOptions: CategoryOption[];
 };
 
 export function TransactionsList(props: TransactionsListProps) {

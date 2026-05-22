@@ -134,13 +134,13 @@
 
   .mobile-transactions-filter-card {
     display: grid;
-    gap: 14px;
+    gap: 10px;
     border-radius: 28px;
     border: 1px solid rgba(255, 255, 255, 0.08);
     background:
       linear-gradient(180deg, rgba(255, 255, 255, 0.06), rgba(255, 255, 255, 0.024)),
       rgba(8, 13, 27, 0.78);
-    padding: 15px;
+    padding: 12px;
   }
 
   .mobile-transactions-search {
@@ -152,12 +152,52 @@
     grid-template-columns: auto minmax(0, 1fr);
     align-items: center;
     gap: 0.6rem;
-    min-height: 52px;
+    min-height: 46px;
     border-radius: 20px;
     border: 1px solid rgba(255, 255, 255, 0.09);
     background: rgba(3, 7, 18, 0.82);
     padding: 0 1rem;
     color: rgba(255, 255, 255, 0.5);
+  }
+
+  .mobile-filter-summary {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) auto;
+    align-items: center;
+    gap: 10px;
+  }
+
+  .mobile-filter-summary div {
+    display: grid;
+    gap: 2px;
+    min-width: 0;
+  }
+
+  .mobile-filter-summary span {
+    color: rgba(255, 255, 255, 0.42);
+    font-size: 0.68rem;
+    font-weight: 800;
+  }
+
+  .mobile-filter-summary strong {
+    color: #ffffff;
+    font-size: 0.86rem;
+    font-weight: 950;
+  }
+
+  .mobile-filter-summary button {
+    display: inline-flex;
+    min-height: 42px;
+    align-items: center;
+    justify-content: center;
+    gap: 7px;
+    border-radius: 16px;
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    background: #ffffff;
+    padding: 0 0.9rem;
+    color: #020617;
+    font-size: 0.78rem;
+    font-weight: 950;
   }
 
   .mobile-transactions-search__field input {
@@ -236,6 +276,130 @@
     font-size: 0.86rem;
     font-weight: 950;
     box-shadow: 0 12px 30px rgba(0, 0, 0, 0.24);
+  }
+
+  .mobile-filter-sheet {
+    position: fixed;
+    inset: 0;
+    z-index: 99980;
+    display: flex;
+    align-items: flex-end;
+  }
+
+  .mobile-filter-sheet__backdrop {
+    position: absolute;
+    inset: 0;
+    border: 0;
+    background: rgba(0, 0, 0, 0.72);
+    backdrop-filter: blur(12px);
+  }
+
+  .mobile-filter-sheet__panel {
+    position: relative;
+    z-index: 1;
+    display: grid;
+    width: 100%;
+    max-height: min(82vh, 620px);
+    overflow-y: auto;
+    gap: 14px;
+    border-radius: 30px 30px 0 0;
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    border-bottom: 0;
+    background:
+      linear-gradient(180deg, rgba(255, 255, 255, 0.075), rgba(255, 255, 255, 0.028)),
+      #050816;
+    padding: 10px 14px calc(18px + env(safe-area-inset-bottom));
+    box-shadow: 0 -24px 80px rgba(0, 0, 0, 0.6);
+  }
+
+  .mobile-filter-sheet__handle {
+    margin: 0 auto;
+    height: 4px;
+    width: 42px;
+    border-radius: 999px;
+    background: rgba(255, 255, 255, 0.22);
+  }
+
+  .mobile-filter-sheet__header {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) auto;
+    align-items: center;
+    gap: 12px;
+  }
+
+  .mobile-filter-sheet__header h3 {
+    color: #ffffff;
+    font-size: 1.25rem;
+    font-weight: 950;
+    letter-spacing: -0.05em;
+  }
+
+  .mobile-filter-sheet__header button {
+    display: flex;
+    height: 40px;
+    width: 40px;
+    align-items: center;
+    justify-content: center;
+    border-radius: 16px;
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    background: rgba(255, 255, 255, 0.06);
+    color: #ffffff;
+  }
+
+  .mobile-filter-sheet__grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 10px;
+  }
+
+  .mobile-filter-sheet__grid label {
+    margin-bottom: 0.35rem;
+    display: block;
+    color: rgba(255, 255, 255, 0.58);
+    font-size: 0.68rem;
+    font-weight: 900;
+  }
+
+  .mobile-filter-sheet__grid select {
+    min-height: 44px;
+    width: 100%;
+    border-radius: 16px;
+    border: 1px solid rgba(255, 255, 255, 0.09);
+    background: rgba(3, 7, 18, 0.84);
+    padding: 0 0.72rem;
+    color: #ffffff;
+    font-size: 0.82rem;
+    font-weight: 850;
+    outline: none;
+  }
+
+  .mobile-filter-sheet__actions {
+    display: grid;
+    grid-template-columns: 0.85fr 1.15fr;
+    gap: 10px;
+  }
+
+  .mobile-filter-sheet__actions a,
+  .mobile-filter-sheet__actions button {
+    display: inline-flex;
+    min-height: 48px;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    border-radius: 18px;
+    font-size: 0.84rem;
+    font-weight: 950;
+  }
+
+  .mobile-filter-sheet__actions a {
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    background: rgba(255, 255, 255, 0.06);
+    color: #ffffff;
+  }
+
+  .mobile-filter-sheet__actions button {
+    background: #ffffff;
+    color: #020617;
   }
 
   .mobile-transactions-responsibles {

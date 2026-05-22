@@ -61,8 +61,8 @@ function SeriesEditScopeChoice({
   errorMessage: string | null;
 }) {
   return (
-    <div className="app-container flex min-h-[62vh] items-center justify-center">
-      <section className="w-full max-w-xl rounded-[2rem] border border-white/10 bg-white/[0.04] p-6 shadow-2xl shadow-black/50 backdrop-blur-2xl">
+    <div className="series-scope-page">
+      <section className="series-scope-card">
         <p className="text-sm font-bold text-cyan-200">
           Parcela {currentInstallment}/{totalInstallments}
         </p>
@@ -82,7 +82,7 @@ function SeriesEditScopeChoice({
           </div>
         ) : null}
 
-        <div className="mt-6 grid gap-3">
+        <div className="series-scope-actions">
           <Link
             href={`/lancamentos/${transactionId}/editar?scope=SINGLE`}
             className="app-button-primary w-full"

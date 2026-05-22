@@ -1,14 +1,21 @@
+"use client";
+
 import Link from "next/link";
+import { useState } from "react";
 import {
   ArrowDownCircle,
   ArrowUpCircle,
   CalendarDays,
   CreditCard,
+  Filter,
   Pencil,
   Plus,
+  RotateCcw,
   Search,
+  SlidersHorizontal,
   UserRound,
   Wallet,
+  X,
 } from "lucide-react";
 import { DeleteTransactionButton } from "@/components/transactions/DeleteTransactionButton";
 
@@ -40,6 +47,12 @@ type ResponsibleOption = {
   name: string;
 };
 
+type CategoryOption = {
+  id: string;
+  name: string;
+  type: "INCOME" | "EXPENSE";
+};
+
 type ResponsibleSummaryCard = {
   id: string;
   name: string;
@@ -65,10 +78,12 @@ type TransactionsListMobileProps = {
     status: string;
     paymentMethod: string;
     responsibleId: string;
+    categoryId: string;
     month: string;
     year: string;
   };
   responsibleOptions: ResponsibleOption[];
+  categoryOptions: CategoryOption[];
 };
 
 function getStatusLabel(status: TransactionItem["status"]) {
@@ -86,9 +101,9 @@ function getPaymentMethodLabel(method: TransactionItem["paymentMethod"]) {
   const labels = {
     PIX: "Pix",
     CASH: "Dinheiro",
-    DEBIT_CARD: "Débito",
-    CREDIT_CARD: "Crédito",
-    BANK_TRANSFER: "Transferência",
+    DEBIT_CARD: "Debito",
+    CREDIT_CARD: "Credito",
+    BANK_TRANSFER: "Transferencia",
     BOLETO: "Boleto",
     OTHER: "Outro",
   };
@@ -97,7 +112,7 @@ function getPaymentMethodLabel(method: TransactionItem["paymentMethod"]) {
 }
 
 function getTypeLabel(type: TransactionItem["type"]) {
-  return type === "INCOME" ? "Entrada" : "Saída";
+  return type === "INCOME" ? "Entrada" : "Saida";
 }
 
 function getTransactionIcon(type: TransactionItem["type"]) {
@@ -135,6 +150,10 @@ function buildTransactionsHref(
     params.set("responsibleId", nextFilters.responsibleId);
   }
 
+  if (nextFilters.categoryId && nextFilters.categoryId !== "ALL") {
+    params.set("categoryId", nextFilters.categoryId);
+  }
+
   if (nextFilters.month && nextFilters.month !== "ALL") {
     params.set("month", nextFilters.month);
   }
@@ -158,7 +177,7 @@ function getActiveResponsibleName(
 
   return (
     responsibleOptions.find((responsible) => responsible.id === responsibleId)
-      ?.name ?? "Responsável"
+      ?.name ?? "Responsavel"
   );
 }
 
@@ -168,7 +187,9 @@ export function TransactionsListMobile({
   responsibleSummaryCards,
   filters,
   responsibleOptions,
+  categoryOptions,
 }: TransactionsListMobileProps) {
+  const [filtersOpen, setFiltersOpen] = useState(false);
   const hasTransactions = transactions.length > 0;
   const currentYear = new Date().getFullYear();
   const yearOptions = [currentYear - 1, currentYear, currentYear + 1];
@@ -176,17 +197,26 @@ export function TransactionsListMobile({
   if (!yearOptions.map(String).includes(filters.year)) {
     yearOptions.unshift(Number(filters.year));
   }
+
   const generalCard = responsibleSummaryCards.find((card) => card.isGeneral);
   const individualCards = responsibleSummaryCards.filter(
     (card) => !card.isGeneral,
   );
+  const activeFiltersCount = [
+    filters.search.trim() !== "",
+    filters.type !== "ALL",
+    filters.status !== "ALL",
+    filters.responsibleId !== "ALL",
+    filters.categoryId !== "ALL",
+    filters.month === "ALL",
+  ].filter(Boolean).length;
 
   return (
     <div className="mobile-transactions">
       <header className="mobile-transactions-hero">
         <div>
           <p className="mobile-eyebrow">Controle financeiro</p>
-          <h2>Lançamentos</h2>
+          <h2>Lancamentos</h2>
           <span>{summary.totalTransactions} registros encontrados</span>
         </div>
 
@@ -214,7 +244,7 @@ export function TransactionsListMobile({
           </div>
 
           <div>
-            <span>Saídas</span>
+            <span>Saidas</span>
             <b className="finance-expense">{summary.totalExpense}</b>
           </div>
         </div>
@@ -227,7 +257,7 @@ export function TransactionsListMobile({
             <input
               name="search"
               defaultValue={filters.search}
-              placeholder="Buscar lançamento..."
+              placeholder="Buscar lancamento..."
             />
           </div>
 
@@ -243,154 +273,170 @@ export function TransactionsListMobile({
             name="responsibleId"
             value={filters.responsibleId}
           />
-        </form>
-
-        <div className="mobile-filter-chips">
-          <Link
-            href={buildTransactionsHref(filters, { type: "ALL" })}
-            className={
-              filters.type === "ALL"
-                ? "mobile-filter-chip mobile-filter-chip--active"
-                : "mobile-filter-chip"
-            }
-          >
-            Todos
-          </Link>
-
-          <Link
-            href={buildTransactionsHref(filters, { type: "INCOME" })}
-            className={
-              filters.type === "INCOME"
-                ? "mobile-filter-chip mobile-filter-chip--income mobile-filter-chip--active"
-                : "mobile-filter-chip mobile-filter-chip--income"
-            }
-          >
-            Entradas
-          </Link>
-
-          <Link
-            href={buildTransactionsHref(filters, { type: "EXPENSE" })}
-            className={
-              filters.type === "EXPENSE"
-                ? "mobile-filter-chip mobile-filter-chip--expense mobile-filter-chip--active"
-                : "mobile-filter-chip mobile-filter-chip--expense"
-            }
-          >
-            Saídas
-          </Link>
-        </div>
-
-        <form action="/lancamentos" className="mobile-filter-selects">
-          <input type="hidden" name="search" value={filters.search} />
-          <input type="hidden" name="type" value={filters.type} />
+          <input type="hidden" name="categoryId" value={filters.categoryId} />
           <input type="hidden" name="month" value={filters.month} />
           <input type="hidden" name="year" value={filters.year} />
-
-          <div>
-            <label>Status</label>
-
-            <select
-              name="status"
-              defaultValue={filters.status}
-              className="finance-input"
-            >
-              <option value="ALL">Todos</option>
-              <option value="PAID">Pago</option>
-              <option value="PENDING">Pendente</option>
-              <option value="OVERDUE">Atrasado</option>
-              <option value="CANCELED">Cancelado</option>
-            </select>
-          </div>
-
-          <div>
-            <label>Pagamento</label>
-
-            <select
-              name="paymentMethod"
-              defaultValue={filters.paymentMethod}
-              className="finance-input"
-            >
-              <option value="ALL">Todos</option>
-              <option value="PIX">Pix</option>
-              <option value="CASH">Dinheiro</option>
-              <option value="DEBIT_CARD">Débito</option>
-              <option value="CREDIT_CARD">Crédito</option>
-              <option value="BANK_TRANSFER">Transferência</option>
-              <option value="BOLETO">Boleto</option>
-              <option value="OTHER">Outro</option>
-            </select>
-          </div>
-
-          <div>
-            <label>Responsável</label>
-
-            <select
-              name="responsibleId"
-              defaultValue={filters.responsibleId}
-              className="finance-input"
-            >
-              <option value="ALL">Todos</option>
-
-              {responsibleOptions.map((responsible) => (
-                <option key={responsible.id} value={responsible.id}>
-                  {responsible.name}
-                </option>
-              ))}
-            </select>
-          </div>
-
-          <div>
-            <label>Mês</label>
-
-            <select
-              name="month"
-              defaultValue={filters.month}
-              className="finance-input"
-            >
-              <option value="ALL">Todos os meses</option>
-              <option value="01">Jan</option>
-              <option value="02">Fev</option>
-              <option value="03">Mar</option>
-              <option value="04">Abr</option>
-              <option value="05">Mai</option>
-              <option value="06">Jun</option>
-              <option value="07">Jul</option>
-              <option value="08">Ago</option>
-              <option value="09">Set</option>
-              <option value="10">Out</option>
-              <option value="11">Nov</option>
-              <option value="12">Dez</option>
-            </select>
-          </div>
-
-          <div>
-            <label>Ano</label>
-
-            <select
-              name="year"
-              defaultValue={filters.year}
-              className="finance-input"
-            >
-              {yearOptions.map((year) => (
-                <option key={year} value={String(year)}>
-                  {year}
-                </option>
-              ))}
-            </select>
-          </div>
-
-          <button type="submit">Aplicar filtros</button>
         </form>
+
+        <div className="mobile-filter-summary">
+          <div>
+            <span>
+              {filters.month === "ALL" ? "Ano todo" : `${filters.month}/${filters.year}`}
+            </span>
+            <strong>
+              {activeFiltersCount > 0
+                ? `${activeFiltersCount} filtro${
+                    activeFiltersCount > 1 ? "s" : ""
+                  }`
+                : "Mes atual"}
+            </strong>
+          </div>
+
+          <button type="button" onClick={() => setFiltersOpen(true)}>
+            <SlidersHorizontal className="h-4 w-4" />
+            Filtros
+          </button>
+        </div>
       </section>
+
+      {filtersOpen && (
+        <div className="mobile-filter-sheet" role="dialog" aria-modal="true">
+          <button
+            type="button"
+            className="mobile-filter-sheet__backdrop"
+            onClick={() => setFiltersOpen(false)}
+            aria-label="Fechar filtros"
+          />
+
+          <form action="/lancamentos" className="mobile-filter-sheet__panel">
+            <div className="mobile-filter-sheet__handle" />
+
+            <div className="mobile-filter-sheet__header">
+              <div>
+                <p className="mobile-eyebrow">Filtros</p>
+                <h3>Refinar lista</h3>
+              </div>
+
+              <button
+                type="button"
+                onClick={() => setFiltersOpen(false)}
+                aria-label="Fechar filtros"
+              >
+                <X className="h-4 w-4" />
+              </button>
+            </div>
+
+            <input type="hidden" name="search" value={filters.search} />
+            <input
+              type="hidden"
+              name="paymentMethod"
+              value={filters.paymentMethod}
+            />
+
+            <div className="mobile-filter-sheet__grid">
+              <div>
+                <label>Mes</label>
+                <select name="month" defaultValue={filters.month}>
+                  <option value="ALL">Ano todo</option>
+                  <option value="01">Jan</option>
+                  <option value="02">Fev</option>
+                  <option value="03">Mar</option>
+                  <option value="04">Abr</option>
+                  <option value="05">Mai</option>
+                  <option value="06">Jun</option>
+                  <option value="07">Jul</option>
+                  <option value="08">Ago</option>
+                  <option value="09">Set</option>
+                  <option value="10">Out</option>
+                  <option value="11">Nov</option>
+                  <option value="12">Dez</option>
+                </select>
+              </div>
+
+              <div>
+                <label>Ano</label>
+                <select name="year" defaultValue={filters.year}>
+                  {yearOptions.map((year) => (
+                    <option key={year} value={String(year)}>
+                      {year}
+                    </option>
+                  ))}
+                </select>
+              </div>
+
+              <div>
+                <label>Status</label>
+                <select name="status" defaultValue={filters.status}>
+                  <option value="ALL">Todos</option>
+                  <option value="PAID">Pago</option>
+                  <option value="PENDING">Pendente</option>
+                  <option value="OVERDUE">Atrasado</option>
+                  <option value="CANCELED">Cancelado</option>
+                </select>
+              </div>
+
+              <div>
+                <label>Tipo</label>
+                <select name="type" defaultValue={filters.type}>
+                  <option value="ALL">Todos</option>
+                  <option value="INCOME">Entradas</option>
+                  <option value="EXPENSE">Saidas</option>
+                </select>
+              </div>
+
+              <div>
+                <label>Responsavel</label>
+                <select name="responsibleId" defaultValue={filters.responsibleId}>
+                  <option value="ALL">Todos</option>
+                  {responsibleOptions.map((responsible) => (
+                    <option key={responsible.id} value={responsible.id}>
+                      {responsible.name}
+                    </option>
+                  ))}
+                </select>
+              </div>
+
+              <div>
+                <label>Categoria</label>
+                <select name="categoryId" defaultValue={filters.categoryId}>
+                  <option value="ALL">Todas</option>
+                  {categoryOptions.map((category) => (
+                    <option key={category.id} value={category.id}>
+                      {category.name}
+                    </option>
+                  ))}
+                </select>
+              </div>
+            </div>
+
+            <div className="mobile-filter-sheet__actions">
+              <Link href="/lancamentos">
+                <RotateCcw className="h-4 w-4" />
+                Limpar
+              </Link>
+
+              <button type="submit">
+                <Filter className="h-4 w-4" />
+                Aplicar
+              </button>
+            </div>
+          </form>
+        </div>
+      )}
 
       <section className="mobile-transactions-responsibles">
         <div className="mobile-section__header">
           <div>
-            <p className="mobile-eyebrow">Responsáveis</p>
+            <p className="mobile-eyebrow">Responsaveis</p>
             <h3>Resumo por pessoa</h3>
           </div>
 
-          <span>{getActiveResponsibleName(responsibleOptions, filters.responsibleId)}</span>
+          <span>
+            {getActiveResponsibleName(
+              responsibleOptions,
+              filters.responsibleId,
+            )}
+          </span>
         </div>
 
         <div className="mobile-transactions-responsible-scroll">
@@ -438,8 +484,8 @@ export function TransactionsListMobile({
       <section className="mobile-section">
         <div className="mobile-section__header">
           <div>
-            <p className="mobile-eyebrow">Histórico</p>
-            <h3>Movimentações</h3>
+            <p className="mobile-eyebrow">Historico</p>
+            <h3>Movimentacoes</h3>
           </div>
 
           <Link href="/lancamentos/novo" className="mobile-see-all">
@@ -449,9 +495,9 @@ export function TransactionsListMobile({
 
         {!hasTransactions && (
           <div className="mobile-empty-state">
-            <strong>Nenhum lançamento encontrado</strong>
-            <p>Ajuste os filtros ou cadastre uma nova entrada ou saída.</p>
-            <Link href="/lancamentos/novo">Criar lançamento</Link>
+            <strong>Nenhum lancamento encontrado</strong>
+            <p>Ajuste os filtros ou cadastre uma nova entrada ou saida.</p>
+            <Link href="/lancamentos/novo">Criar lancamento</Link>
           </div>
         )}
 

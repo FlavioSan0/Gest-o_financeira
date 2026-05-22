@@ -27,6 +27,7 @@ export type TransactionsFilters = {
   status?: TransactionStatusFilter;
   paymentMethod?: PaymentMethodFilter;
   responsibleId?: string;
+  categoryId?: string;
   month?: string;
   year?: string;
 };
@@ -254,6 +255,19 @@ async function getTransactionsListForFamily(
           createdAt: "asc",
         },
       },
+      categories: {
+        where: {
+          active: true,
+        },
+        orderBy: {
+          name: "asc",
+        },
+        select: {
+          id: true,
+          name: true,
+          type: true,
+        },
+      },
     },
   });
 
@@ -273,10 +287,12 @@ async function getTransactionsListForFamily(
         status: filters.status ?? "ALL",
         paymentMethod: filters.paymentMethod ?? "ALL",
         responsibleId: filters.responsibleId ?? "ALL",
+        categoryId: filters.categoryId ?? "ALL",
         month,
         year,
       },
       responsibleOptions: [],
+      categoryOptions: [],
     };
   }
 
@@ -305,6 +321,11 @@ async function getTransactionsListForFamily(
     ...(filters.paymentMethod && filters.paymentMethod !== "ALL"
       ? {
           paymentMethod: filters.paymentMethod,
+        }
+      : {}),
+    ...(filters.categoryId && filters.categoryId !== "ALL"
+      ? {
+          categoryId: filters.categoryId,
         }
       : {}),
     OR: [
@@ -478,6 +499,7 @@ async function getTransactionsListForFamily(
       status: filters.status ?? "ALL",
       paymentMethod: filters.paymentMethod ?? "ALL",
       responsibleId: filters.responsibleId ?? "ALL",
+      categoryId: filters.categoryId ?? "ALL",
       month,
       year,
     },
@@ -491,6 +513,11 @@ async function getTransactionsListForFamily(
         name: getDisplayName(member.user.name),
       })),
     ],
+    categoryOptions: family.categories.map((category) => ({
+      id: category.id,
+      name: category.name,
+      type: category.type,
+    })),
   };
 }
 
@@ -502,6 +529,7 @@ export async function getTransactionsList(filters: TransactionsFilters = {}) {
     status: filters.status ?? "ALL",
     paymentMethod: filters.paymentMethod ?? "ALL",
     responsibleId: filters.responsibleId ?? "ALL",
+    categoryId: filters.categoryId ?? "ALL",
     month: getValidMonth(filters.month),
     year: getValidYear(filters.year),
   };
@@ -531,6 +559,13 @@ export async function getTransactionForEdit(transactionId: string) {
         id: transactionId,
         familyId: session.familyId,
       },
+      include: {
+        user: {
+          select: {
+            name: true,
+          },
+        },
+      },
     }),
   ]);
 
@@ -556,6 +591,9 @@ export async function getTransactionForEdit(transactionId: string) {
       status: transaction.status,
       paymentMethod: transaction.paymentMethod,
       notes: getCleanNotes(transaction.notes),
+      responsible: transaction.user
+        ? getDisplayName(transaction.user.name)
+        : "Nao informado",
       series: extractRepeatMetadata(transaction.notes),
     },
   };

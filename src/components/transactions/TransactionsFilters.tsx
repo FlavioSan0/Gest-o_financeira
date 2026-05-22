@@ -13,6 +13,7 @@ type TransactionsFiltersProps = {
     status: string;
     paymentMethod: string;
     responsibleId: string;
+    categoryId?: string;
     month: string;
     year: string;
   };
