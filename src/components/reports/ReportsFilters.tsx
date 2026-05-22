@@ -1,4 +1,8 @@
+"use client";
+
+import { useState } from "react";
 import { Filter, Search } from "lucide-react";
+import { MobileFilterSheet } from "@/components/common/MobileFilterSheet";
 import type { ReportsData } from "@/services/reports-service";
 
 type ReportsFiltersProps = {
@@ -6,9 +10,19 @@ type ReportsFiltersProps = {
   options: ReportsData["options"];
 };
 
-function FiltersFields({ filters, options }: ReportsFiltersProps) {
+function FiltersFields({
+  filters,
+  options,
+  mobileSheet = false,
+}: ReportsFiltersProps & { mobileSheet?: boolean }) {
   return (
-    <div className="grid gap-3 md:grid-cols-2 xl:grid-cols-6">
+    <div
+      className={
+        mobileSheet
+          ? "mobile-filter-sheet__grid"
+          : "grid gap-3 md:grid-cols-2 xl:grid-cols-6"
+      }
+    >
       <div>
         <label className="mb-2 block text-xs font-bold uppercase tracking-[0.16em] app-faint-text">
           Mes
@@ -100,6 +114,8 @@ function FiltersFields({ filters, options }: ReportsFiltersProps) {
 }
 
 export function ReportsFilters({ filters, options }: ReportsFiltersProps) {
+  const [filtersOpen, setFiltersOpen] = useState(false);
+
   return (
     <>
       <form action="/relatorios" className="app-card desktop-only p-5">
@@ -120,24 +136,29 @@ export function ReportsFilters({ filters, options }: ReportsFiltersProps) {
         <FiltersFields filters={filters} options={options} />
       </form>
 
-      <details className="app-card mobile-only p-4">
-        <summary className="flex cursor-pointer list-none items-center justify-between text-sm font-black text-white">
-          <span className="inline-flex items-center gap-2">
+      <section className="mobile-transactions-filter-card mobile-only">
+        <div className="mobile-filter-summary">
+          <div>
+            <span>{filters.month}/{filters.year}</span>
+            <strong>Filtros do relatorio</strong>
+          </div>
+
+          <button type="button" onClick={() => setFiltersOpen(true)}>
             <Filter className="h-4 w-4" />
             Filtros
-          </span>
-          <span className="text-xs app-muted-text">abrir</span>
-        </summary>
-
-        <form action="/relatorios" className="mt-4 grid gap-4">
-          <FiltersFields filters={filters} options={options} />
-
-          <button type="submit" className="app-button-primary w-full">
-            <Search className="h-4 w-4" />
-            Aplicar
           </button>
-        </form>
-      </details>
+        </div>
+      </section>
+
+      <MobileFilterSheet
+        isOpen={filtersOpen}
+        title="Relatorios"
+        action="/relatorios"
+        clearHref="/relatorios"
+        onClose={() => setFiltersOpen(false)}
+      >
+        <FiltersFields filters={filters} options={options} mobileSheet />
+      </MobileFilterSheet>
     </>
   );
 }

@@ -1,5 +1,9 @@
+"use client";
+
+import { useState } from "react";
 import { Filter, RotateCcw } from "lucide-react";
 import Link from "next/link";
+import { MobileFilterSheet } from "@/components/common/MobileFilterSheet";
 
 type CreditCardOption = {
   id: string;
@@ -39,8 +43,11 @@ export function CardInvoiceFilters({
   creditCards,
   availableYears,
 }: CardInvoiceFiltersProps) {
+  const [filtersOpen, setFiltersOpen] = useState(false);
+
   return (
-    <form className="app-card p-5" action="/cartoes/faturas">
+    <>
+    <form className="app-card desktop-only p-5" action="/cartoes/faturas">
       <div className="grid gap-4 lg:grid-cols-[1fr_0.7fr_0.7fr_auto] lg:items-end">
         <div>
           <label className="mb-2 block text-sm font-bold text-white">
@@ -110,5 +117,67 @@ export function CardInvoiceFilters({
         </div>
       </div>
     </form>
+
+    <section className="mobile-transactions-filter-card mobile-only">
+      <div className="mobile-filter-summary">
+        <div>
+          <span>
+            {String(filters.month).padStart(2, "0")}/{filters.year}
+          </span>
+          <strong>Filtros da fatura</strong>
+        </div>
+
+        <button type="button" onClick={() => setFiltersOpen(true)}>
+          <Filter className="h-4 w-4" />
+          Filtros
+        </button>
+      </div>
+    </section>
+
+    <MobileFilterSheet
+      isOpen={filtersOpen}
+      title="Faturas"
+      action="/cartoes/faturas"
+      clearHref="/cartoes/faturas"
+      onClose={() => setFiltersOpen(false)}
+    >
+      <div className="mobile-filter-sheet__grid">
+        <div className="mobile-filter-sheet__span-2">
+          <label>Cartao</label>
+          <select name="creditCardId" defaultValue={filters.creditCardId}>
+            <option value="ALL">Todos os cartoes</option>
+
+            {creditCards.map((card) => (
+              <option key={card.id} value={card.id}>
+                {card.name} - {card.bank}
+              </option>
+            ))}
+          </select>
+        </div>
+
+        <div>
+          <label>Mes</label>
+          <select name="month" defaultValue={filters.month}>
+            {months.map((month) => (
+              <option key={month.value} value={month.value}>
+                {month.label}
+              </option>
+            ))}
+          </select>
+        </div>
+
+        <div>
+          <label>Ano</label>
+          <select name="year" defaultValue={filters.year}>
+            {availableYears.map((year) => (
+              <option key={year} value={year}>
+                {year}
+              </option>
+            ))}
+          </select>
+        </div>
+      </div>
+    </MobileFilterSheet>
+    </>
   );
 }
